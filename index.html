@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SPPG Kuta Alam Mulia 2</title>
+<style>
+:root{
+  --green:#1a6b3c;--green2:#2d8f55;--green-lt:#e8f5ee;
+  --gold:#c9960a;--gold-lt:#fdf6e3;
+  --bg:#f4f6f1;--card:#fff;--text:#1c2a1e;--muted:#6b7c6e;
+  --border:#d4e0d6;--red:#c0392b;--red-lt:#fdecea;
+  --shadow:0 2px 14px rgba(26,107,60,.09);--radius:13px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* SIDEBAR */
+#sidebar{position:fixed;top:0;left:0;height:100vh;width:220px;background:var(--green);display:flex;flex-direction:column;z-index:100;box-shadow:3px 0 16px rgba(0,0,0,.18)}
+.sb-logo{padding:24px 18px 16px;border-bottom:1px solid rgba(255,255,255,.13)}
+.sb-logo h1{font-size:14.5px;font-weight:800;color:#fff;line-height:1.45;font-family:Georgia,serif}
+.sb-logo span{display:block;font-size:10.5px;color:rgba(255,255,255,.55);margin-top:4px}
+.sb-nav{padding:14px 8px;flex:1}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:10px 13px;border-radius:9px;color:rgba(255,255,255,.72);font-size:13px;font-weight:500;cursor:pointer;transition:all .18s;margin-bottom:3px;border:none;background:none;width:100%;text-align:left}
+.nav-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-btn.active{background:rgba(255,255,255,.19);color:#fff}
+.sb-foot{padding:14px 18px;border-top:1px solid rgba(255,255,255,.1);font-size:10.5px;color:rgba(255,255,255,.4)}
+
+/* MAIN */
+#main{margin-left:220px;min-height:100vh}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar h2{font-size:17px;font-weight:800}
+.topbar-date{font-size:12.5px;color:var(--muted)}
+
+/* PAGES */
+.page{display:none;padding:28px}.page.active{display:block}
+
+/* CARD */
+.card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow)}
+.card-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-hd h3{font-size:14.5px;font-weight:700}
+.card-bd{padding:20px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:18px 20px;box-shadow:var(--shadow)}
+.stat .lbl{font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:6px}
+.stat .val{font-size:26px;font-weight:800;color:var(--green)}
+.stat .sub{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.bg{background:var(--green-lt);color:var(--green)}
+.bo{background:var(--gold-lt);color:var(--gold)}
+.bx{background:#f0f0f0;color:#666}
+
+/* BTN */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
+.bp{background:var(--green);color:#fff}.bp:hover{background:var(--green2)}
+.bq{background:transparent;color:var(--green);border:1.5px solid var(--green)}.bq:hover{background:var(--green-lt)}
+.bg2{background:var(--gold);color:#fff}
+.brd{background:var(--red);color:#fff}
+.sm{padding:5px 11px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:var(--green-lt);color:var(--green);padding:10px 13px;text-align:left;font-weight:700;font-size:11.5px;border-bottom:2px solid var(--border)}
+.tbl td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#f8fcf9}
+
+/* FORM */
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:12.5px;font-weight:700;margin-bottom:5px}
+.fc{width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13.5px;font-family:inherit;color:var(--text);background:#fff;transition:border-color .15s}
+.fc:focus{outline:none;border-color:var(--green)}
+input[type=month]{padding:7px 11px;border-radius:8px;border:1.5px solid var(--border);font-size:12.5px;font-family:inherit;cursor:pointer}
+
+/* SCHOOL SECTION */
+.sch-sec{background:var(--card);border-radius:var(--radius);border:1.5px solid var(--border);margin-bottom:14px;overflow:hidden}
+.sch-hd{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background .15s}
+.sch-hd:hover{background:var(--green-lt)}
+.sch-hd h4{font-size:13.5px;font-weight:700}
+.sch-meta{font-size:10.5px;color:var(--muted);margin-top:2px}
+.sch-bd{padding:16px 18px;border-top:1px solid var(--border);display:none}
+.sch-bd.open{display:block}
+.chev{transition:transform .2s}.chev.open{transform:rotate(180deg)}
+.pcnt{display:inline-flex;align-items:center;font-size:10.5px;background:var(--green-lt);color:var(--green);padding:2px 8px;border-radius:12px;font-weight:700}
+
+/* PHOTO SLOTS */
+.slots-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.slot-wrap{display:flex;flex-direction:column;gap:6px}
+
+/* Photo slot */
+.slot{border:2px dashed var(--border);border-radius:9px;aspect-ratio:4/3;overflow:hidden;position:relative;background:#f8f8f7;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .18s}
+.slot:hover{border-color:var(--green)}
+.slot input[type=file]{display:none}
+.slot img{width:100%;height:100%;object-fit:cover}
+.slot-ph{display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
+.slot-ph svg{color:var(--muted);opacity:.55}
+.slot-ph span{font-size:11.5px;color:var(--muted)}
+.slot-rmv{position:absolute;top:5px;left:5px;background:rgba(192,57,43,.88);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:13px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:3;line-height:1}
+.slot.has .slot-rmv{display:flex}
+.slot.has .slot-ph{display:none}
+
+/* Timestamp overlay — pojok kanan atas, seperti kamera HP */
+.ts-overlay{
+  position:absolute;top:6px;right:7px;
+  text-align:right;
+  display:none;pointer-events:none;
+  font-family:'Courier New',Courier,monospace;
+  line-height:1.4;
+}
+.slot.has .ts-overlay{display:block}
+.ts-overlay .ts-date{
+  font-size:9px;font-weight:400;
+  color:#fff;
+  text-shadow:1px 1px 3px rgba(0,0,0,.95);
+  display:block;letter-spacing:.3px;
+}
+.ts-overlay .ts-loc{
+  font-size:7px;font-weight:400;
+  color:#fff;
+  text-shadow:1px 1px 3px rgba(0,0,0,.95);
+  display:block;white-space:pre-line;letter-spacing:.2px;
+}
+
+/* Per-photo settings panel */
+.photo-settings{
+  background:#f0f4f0;border:1px solid var(--border);border-radius:8px;
+  padding:8px 10px;font-size:11.5px;
+}
+.photo-settings.hidden{display:none}
+.ps-title{font-size:11px;font-weight:700;color:var(--green);margin-bottom:6px}
+.ps-row{display:flex;gap:6px;align-items:center;margin-bottom:5px}
+.ps-row:last-child{margin-bottom:0}
+.ps-row label{font-size:10.5px;font-weight:600;color:var(--muted);min-width:42px}
+.ps-inp{flex:1;padding:4px 8px;border-radius:6px;border:1.5px solid var(--border);font-size:11px;font-family:inherit;background:#fff}
+.ps-inp:focus{outline:none;border-color:var(--green)}
+
+/* DEMO BANNER */
+.demo-banner{background:linear-gradient(135deg,#1a6b3c,#27854c);color:#fff;border-radius:var(--radius);padding:15px 20px;margin-bottom:22px;display:flex;align-items:center;gap:13px}
+.demo-banner strong{font-size:13.5px;font-weight:800}
+.demo-banner p{font-size:12px;opacity:.85;margin-top:2px}
+
+/* TOAST */
+#toast{position:fixed;bottom:28px;right:28px;background:var(--green);color:#fff;padding:11px 20px;border-radius:9px;font-size:13.5px;font-weight:700;box-shadow:0 4px 18px rgba(0,0,0,.2);transform:translateY(70px);opacity:0;transition:all .28s;z-index:9999}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.err{background:var(--red)}
+
+/* MODALS */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.48);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.mo.open{display:flex}
+.mb{background:#fff;border-radius:var(--radius);padding:26px;max-width:460px;width:100%;box-shadow:0 18px 56px rgba(0,0,0,.22)}
+.mb h3{font-size:16px;font-weight:800;margin-bottom:13px}
+.m-act{display:flex;gap:9px;margin-top:18px;justify-content:flex-end}
+#moFb .mb{max-width:540px}
+#moFb textarea{width:100%;height:150px;margin-top:10px;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);font-family:monospace;font-size:12.5px;resize:vertical}
+
+/* PRINT MODAL */
+#moPrint .mb{max-width:880px;width:97vw;max-height:100vh;padding:0;border-radius:var(--radius)}
+.pm-toolbar{padding:13px 18px;background:var(--green);display:flex;align-items:center;justify-content:space-between;border-radius:var(--radius) var(--radius) 0 0}
+.pm-toolbar h3{color:#fff;font-size:14.5px;font-weight:800}
+.pm-actions{display:flex;gap:8px}
+.pm-body{max-height:calc(100vh - 58px);overflow-y:auto;padding:18px;background:#e0e0e0}
+
+/* ══════════════════════════════════
+   A4 PAGE LAYOUT
+   Semua sekolah dalam 1-2 halaman
+   ══════════════════════════════════ */
+.a4-page{
+  width:794px;
+  background:#fff;
+  padding:28px 32px 28px;
+  margin:0 auto 16px;
+  box-shadow:0 4px 24px rgba(0,0,0,.18);
+  border-radius:3px;
+  font-family:system-ui,sans-serif;
+}
+
+/* Header dokumen */
+.a4-hdr{
+  text-align:center;margin-bottom:14px;
+  padding-bottom:10px;border-bottom:2.5px solid #1a6b3c;
+}
+.a4-hdr .t1{font-size:14px;font-weight:800;color:#1a6b3c;letter-spacing:.7px;text-transform:uppercase}
+.a4-hdr .t2{font-size:10.5px;font-weight:600;color:#333;margin-top:2px}
+.a4-hdr .t3{font-size:10px;color:#6b7c6e;margin-top:3px}
+
+/* Tabel sekolah-sekolah */
+.a4-schools-table{width:100%;border-collapse:collapse}
+.a4-schools-table td{vertical-align:top;padding:3px 4px}
+
+/* Row setiap sekolah: nama | 3 foto */
+.a4-sch-row{display:flex;align-items:stretch;gap:6px;margin-bottom:7px;padding-bottom:7px;border-bottom:1px solid #e8ede8}
+.a4-sch-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+
+/* Label nama sekolah (kiri) */
+.a4-sch-label{
+  width:110px;flex-shrink:0;
+  display:flex;align-items:center;
+  font-size:8.5px;font-weight:800;color:#1a6b3c;
+  padding:4px 6px;
+  background:#e8f5ee;
+  border-radius:5px;
+  border-left:3px solid #1a6b3c;
+  line-height:1.3;
+}
+
+/* 3 foto sekolah */
+.a4-sch-photos{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+
+/* Box tiap foto */
+.a4-photo-box{
+  position:relative;
+  aspect-ratio:4/3;
+  border-radius:5px;
+  overflow:hidden;
+  background:#f0f0f0;
+  border:1px solid #ddd;
+}
+.a4-photo-box img{width:100%;height:100%;object-fit:cover;display:block}
+.a4-photo-empty{
+  width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  color:#ccc;font-size:8px;font-family:monospace;
+}
+
+/* Timestamp pojok kanan atas — gaya kamera */
+.a4-ts{
+  position:absolute;top:4px;right:5px;
+  text-align:right;pointer-events:none;
+  font-family:'Courier New',Courier,monospace;
+  line-height:1.4;
+}
+.a4-ts .ts-d{
+  display:block;font-size:7px;font-weight:400;
+  color:#fff;letter-spacing:.3px;
+  text-shadow:1px 1px 2px rgba(0,0,0,.95);
+}
+.a4-ts .ts-l{
+  display:block;font-size:5.5px;font-weight:400;
+  color:#fff;letter-spacing:.2px;
+  text-shadow:1px 1px 2px rgba(0,0,0,.95);
+  white-space:pre-line;
+}
+
+/* @media print */
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{position:fixed;top:0;left:0;width:100%;z-index:99999;background:#fff}
+  .a4-page{
+    box-shadow:none!important;margin:0!important;border-radius:0!important;
+    width:210mm!important;padding:12mm 13mm!important;
+    page-break-after:always;
+  }
+}
+
+/* MISC */
+.flex{display:flex}.gap2{gap:8px}.aic{align-items:center}.jb{justify-content:space-between}
+.mb4{margin-bottom:16px}.mb6{margin-bottom:24px}
+.spin{width:15px;height:15px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:44px 20px;color:var(--muted);font-size:13.5px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sb-logo">
+    <h1>SPPG Kuta Alam<br>Mulia 2</h1>
+    <span>Banda Aceh</span>
+  </div>
+  <div class="sb-nav">
+    <button class="nav-btn active" onclick="nav('dashboard')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-btn" onclick="nav('input')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Input Dokumentasi
+    </button>
+    <button class="nav-btn" onclick="nav('daftar')">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Daftar Surat Jalan
+    </button>
+    <button class="nav-btn" onclick="openFb()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      Pengaturan Firebase
+    </button>
+  </div>
+  <div class="sb-foot">v1.3.0 · SPPG Mulia 2</div>
+</nav>
+
+<div id="main">
+  <div class="topbar">
+    <h2 id="pgTitle">Dashboard</h2>
+    <span class="topbar-date" id="tbDate"></span>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="pg-dashboard">
+    <div class="demo-banner">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      <div>
+        <strong>Data Demo — 15 Maret 2026</strong>
+        <p>Buka <strong>Daftar Surat Jalan</strong> → klik <strong>🖨️ Print/PDF</strong> untuk lihat format A4 terbaru.</p>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat"><div class="lbl">Total Surat Jalan</div><div class="val" id="sTotal">0</div><div class="sub">Semua waktu</div></div>
+      <div class="stat"><div class="lbl">Bulan Ini</div><div class="val" id="sBulan">0</div><div class="sub" id="sBulanLbl">—</div></div>
+      <div class="stat"><div class="lbl">Total Foto</div><div class="val" id="sFoto">0</div><div class="sub">Terupload</div></div>
+      <div class="stat"><div class="lbl">Sudah Cetak</div><div class="val" id="sCetak">0</div><div class="sub">Dokumen</div></div>
+    </div>
+    <div class="card mb6">
+      <div class="card-hd">
+        <h3>📊 Rekap Per Bulan</h3>
+        <input type="month" id="fMonth" onchange="renderDashboard()">
+      </div>
+      <div class="card-bd" style="padding:0">
+        <table class="tbl"><thead><tr><th>Tanggal</th><th>Hari</th><th>Sekolah</th><th>Foto</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="dbTbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="page" id="pg-input">
+    <div class="card mb6">
+      <div class="card-hd"><h3>📋 Informasi Distribusi</h3></div>
+      <div class="card-bd">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="fg" style="margin:0"><label>Tanggal Distribusi</label><input type="date" id="inTgl" class="fc"></div>
+          <div class="fg" style="margin:0"><label>Keterangan (opsional)</label><input type="text" id="inKet" class="fc" placeholder="mis. Distribusi minggu ke-2"></div>
+        </div>
+      </div>
+    </div>
+    <div id="schCont"></div>
+    <div style="display:flex;gap:11px;margin-top:6px">
+      <button class="btn bp" id="btnSave" onclick="saveDoc()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Simpan Dokumentasi
+      </button>
+      <button class="btn bq" onclick="resetForm()">Reset Form</button>
+    </div>
+  </div>
+
+  <!-- DAFTAR -->
+  <div class="page" id="pg-daftar">
+    <div class="flex aic jb mb4">
+      <input type="month" id="fDaftar" onchange="renderDaftar()">
+      <button class="btn bp sm" onclick="nav('input')">+ Input Baru</button>
+    </div>
+    <div class="card">
+      <div class="card-bd" style="padding:0">
+        <table class="tbl"><thead><tr><th>Tanggal</th><th>Hari</th><th>Keterangan</th><th>Sekolah</th><th>Foto</th><th>Status</th><th style="text-align:center">Aksi</th></tr></thead>
+        <tbody id="dfTbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE MODAL -->
+<div class="mo" id="moFb">
+  <div class="mb" style="max-width:540px">
+    <h3>⚙️ Konfigurasi Firebase</h3>
+    <p style="font-size:12.5px;color:var(--muted)">Paste <code>firebaseConfig</code> dari Firebase Console.</p>
+    <textarea id="fbInp" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+    <div class="m-act">
+      <button class="btn bq sm" onclick="closeMo('moFb')">Batal</button>
+      <button class="btn bp sm" onclick="saveFb()">Simpan & Hubungkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="mo" id="moDel">
+  <div class="mb">
+    <h3>🗑️ Hapus Dokumentasi</h3>
+    <p style="font-size:13px;color:var(--muted)">Yakin ingin menghapus? Data tidak bisa dikembalikan.</p>
+    <div class="m-act">
+      <button class="btn bq sm" onclick="closeMo('moDel')">Batal</button>
+      <button class="btn brd sm" onclick="confirmDel()">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="mo" id="moEdit">
+  <div class="mb" style="max-width:520px">
+    <h3>✏️ Edit Dokumentasi</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px">
+      <div class="fg" style="margin:0"><label>Tanggal</label><input type="date" id="edTgl" class="fc"></div>
+      <div class="fg" style="margin:0"><label>Keterangan</label><input type="text" id="edKet" class="fc"></div>
+    </div>
+    <div class="m-act">
+      <button class="btn bq sm" onclick="closeMo('moEdit')">Batal</button>
+      <button class="btn bp sm" onclick="confirmEdit()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT MODAL — A4 Preview -->
+<div class="mo" id="moPrint" style="align-items:flex-start;padding:0">
+  <div class="mb" style="max-width:880px;width:97vw;max-height:100vh;padding:0;border-radius:var(--radius)">
+    <div class="pm-toolbar">
+      <h3>📄 Preview Cetak A4</h3>
+      <div class="pm-actions">
+        <button class="btn sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3)" onclick="doPrint()">🖨️ Print</button>
+        <button class="btn sm" style="background:#c9960a;color:#fff" onclick="doSaveHTML()">⬇️ Simpan HTML</button>
+        <button class="btn sm" style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)" onclick="closeMo('moPrint')">✕ Tutup</button>
+      </div>
+    </div>
+    <div class="pm-body" id="pmBody"></div>
+  </div>
+</div>
+
+<div id="printArea" style="display:none"></div>
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════
+//  SEKOLAH DATA
+// ══════════════════════════
+const SCHOOLS=[
+  {name:"TK/RA Purwanida",                      maps:"https://maps.app.goo.gl/JaggRy7bVrM8wVwL8", coord:"5°33'14.2\"N 95°19'48.3\"E", kelurahan:"Lambaro Skep"},
+  {name:"TK Negeri 3",                           maps:"https://maps.app.goo.gl/HWbkTLeZMtDnBizg7", coord:"5°33'05.8\"N 95°19'52.1\"E", kelurahan:"Lambaro Skep"},
+  {name:"Paud Sinyak Metuah",                    maps:"https://maps.app.goo.gl/ZES2Qdt219rTqmqf7", coord:"5°33'21.0\"N 95°20'01.4\"E", kelurahan:"Kuta Alam"},
+  {name:"SD 32 Banda Aceh",                      maps:"https://maps.app.goo.gl/hx3JjTdbL5fnYDuZ7", coord:"5°33'18.7\"N 95°19'55.6\"E", kelurahan:"Kuta Alam"},
+  {name:"SD 36 Banda Aceh",                      maps:"https://maps.app.goo.gl/fDXh8iAy9MXWffZi8", coord:"5°33'10.3\"N 95°20'05.2\"E", kelurahan:"Kuta Alam"},
+  {name:"MTS Darul 'Ulum YPUI",                  maps:"https://maps.app.goo.gl/CyUikRRnmb6PUPyN8", coord:"5°33'27.9\"N 95°20'08.7\"E", kelurahan:"Kuta Alam"},
+  {name:"SMP Islam Darul 'Ulum YPUI",            maps:"https://maps.app.goo.gl/zjL9QzCF9fe6DMvF8", coord:"5°33'29.1\"N 95°20'09.3\"E", kelurahan:"Kuta Alam"},
+  {name:"MA Darul 'Ulum YPUI",                   maps:"https://maps.app.goo.gl/5QihsyeqpLU2DoYx8", coord:"5°33'30.4\"N 95°20'10.1\"E", kelurahan:"Kuta Alam"},
+  {name:"MTS 1 Banda Aceh",                      maps:"https://maps.app.goo.gl/Ex5RWZTRzebdVc7j7", coord:"5°33'08.5\"N 95°20'14.8\"E", kelurahan:"Kuta Alam"}
+];
+
+const HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+// ══════════════════════════
+//  FORMAT TIMESTAMP (gaya kamera)
+//  dd/mm/yy, HH:MM
+//  Banda Aceh, Aceh, Indonesia
+//  Kelurahan
+// ══════════════════════════
+function fmtCameraTs(tgl, jam, kelurahan){
+  // tgl = "2026-03-15", jam = "07:05"
+  if(!tgl) return {line1:'', line2:''};
+  const d=new Date(tgl+'T00:00:00');
+  const dd=d.getDate().toString().padStart(2,'0');
+  const mm=(d.getMonth()+1).toString().padStart(2,'0');
+  const yy=d.getFullYear().toString().substring(2);
+  const jamStr=jam||'00:00';
+  return {
+    line1:`${dd}/${mm}/${yy}, ${jamStr}`,
+    line2:`Banda Aceh, Aceh\nIndonesia\n${kelurahan||'Kuta Alam'}`
+  };
+}
+
+// ══════════════════════════
+//  DEMO DATA — 15 Maret 2026
+// ══════════════════════════
+const COLORS=['#1a5c34','#1e7a43','#b8860a','#1a5276','#6c3483','#a93226','#117a65','#b9520a','#2c3e50'];
+
+function makeDemoSVG(si, slot){
+  const bg=COLORS[si%COLORS.length];
+  const sch=SCHOOLS[si];
+  const h=(7+si).toString().padStart(2,'0');
+  const m=((slot*18)+5).toString().padStart(2,'0');
+  const tgl='15/03/26';
+  const jam=`${h}:${m}`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">
+<rect width="400" height="300" fill="${bg}"/>
+<text x="200" y="130" text-anchor="middle" fill="rgba(255,255,255,0.13)" font-size="90" font-family="serif">&#128247;</text>
+<text x="200" y="185" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-size="12" font-family="sans-serif">Foto ${slot+1} — Demo</text>
+<text x="392" y="20" text-anchor="end" fill="#fff" font-size="10" font-family="Courier New" font-weight="400">${tgl}, ${jam}</text>
+<text x="392" y="32" text-anchor="end" fill="#fff" font-size="8" font-family="Courier New" font-weight="400">Banda Aceh, Aceh</text>
+<text x="392" y="42" text-anchor="end" fill="#fff" font-size="8" font-family="Courier New" font-weight="400">Indonesia</text>
+<text x="392" y="52" text-anchor="end" fill="#fff" font-size="8" font-family="Courier New" font-weight="400">${sch.kelurahan}</text>
+</svg>`;
+  return {
+    url:'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svg))),
+    tgl:'2026-03-15', jam:`${h}:${m}`, kelurahan:sch.kelurahan,
+    path:null
+  };
+}
+
+let _demo=null;
+function getDemo(){
+  if(_demo)return _demo;
+  _demo={
+    id:'demo_20260315', tanggal:'2026-03-15', hari:'Minggu',
+    keterangan:'Distribusi SPPG — Data Contoh',
+    schools:SCHOOLS.map((sch,si)=>({
+      name:sch.name,
+      photos:[makeDemoSVG(si,0), makeDemoSVG(si,1), si%3!==2?makeDemoSVG(si,2):null]
+    })),
+    printed:false, createdAt:'2026-03-15T07:00:00Z', isDemo:true
+  };
+  return _demo;
+}
+
+// ══════════════════════════
+//  LOCAL STORAGE
+// ══════════════════════════
+function getLocal(){try{return JSON.parse(localStorage.getItem('sppg_v3')||'[]')}catch{return[]}}
+function setLocal(d){try{localStorage.setItem('sppg_v3',JSON.stringify(d))}catch{}}
+
+function getAllDocs(){
+  const local=getLocal();
+  const docs=local.some(d=>d.id==='demo_20260315')?local:[getDemo(),...local];
+  return docs.sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+}
+
+// ══════════════════════════
+//  FIREBASE (opsional)
+// ══════════════════════════
+let fbReady=false;
+function getFbCfg(){try{return JSON.parse(localStorage.getItem('fbCfg')||'null')}catch{return null}}
+async function tryInitFb(){
+  const cfg=getFbCfg(); if(!cfg)return;
+  try{
+    const{initializeApp}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const{getFirestore}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    initializeApp(cfg,'sppg'); fbReady=true; toast('Firebase terhubung ✓');
+  }catch{}
+}
+function openFb(){const c=getFbCfg();if(c)document.getElementById('fbInp').value=JSON.stringify(c,null,2);openMo('moFb')}
+async function saveFb(){
+  try{
+    const c=JSON.parse(document.getElementById('fbInp').value);
+    localStorage.setItem('fbCfg',JSON.stringify(c));
+    toast('Config disimpan. Aktif setelah deploy ke Vercel ✓'); closeMo('moFb');
+  }catch{toast('Format JSON tidak valid',true)}
+}
+
+// ══════════════════════════
+//  UI HELPERS
+// ══════════════════════════
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='show'+(err?' err':'');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className='',3200);
+}
+function openMo(id){document.getElementById(id).classList.add('open')}
+function closeMo(id){document.getElementById(id).classList.remove('open')}
+function nav(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+name).classList.add('active');
+  const titles={dashboard:'Dashboard',input:'Input Dokumentasi',daftar:'Daftar Surat Jalan'};
+  document.getElementById('pgTitle').textContent=titles[name]||name;
+  const idx={dashboard:0,input:1,daftar:2};
+  document.querySelectorAll('.nav-btn')[idx[name]]?.classList.add('active');
+  if(name==='dashboard')renderDashboard();
+  if(name==='daftar')renderDaftar();
+}
+
+// ══════════════════════════
+//  DATE HELPERS
+// ══════════════════════════
+function fmtTgl(s){const d=new Date(s+'T00:00:00');return`${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`}
+function getHari(s){return HARI[new Date(s+'T00:00:00').getDay()]}
+function ym(s){return s.substring(0,7)}
+function todayStr(){return new Date().toISOString().substring(0,10)}
+function nowJam(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
+
+// ══════════════════════════
+//  INPUT — SCHOOLS UI
+//  Setiap foto punya setting: jam + kelurahan
+// ══════════════════════════
+let pData=Array.from({length:9},()=>[null,null,null]);
+
+function buildSchoolsUI(){
+  const c=document.getElementById('schCont'); c.innerHTML='';
+  SCHOOLS.forEach((sch,si)=>{
+    const div=document.createElement('div'); div.className='sch-sec';
+    div.innerHTML=`
+      <div class="sch-hd" onclick="togSch(${si})">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <h4>${sch.name}</h4>
+            <span class="pcnt" id="pc${si}">0 foto</span>
+          </div>
+          <div class="sch-meta">📍 ${sch.coord} &nbsp;·&nbsp;
+            <a href="${sch.maps}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green)">Lihat Maps</a>
+          </div>
+        </div>
+        <svg class="chev" id="chev${si}" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="sch-bd" id="sb${si}">
+        <div class="slots-grid">
+          ${[0,1,2].map(sl=>`
+          <div class="slot-wrap">
+            <!-- SLOT FOTO -->
+            <div class="slot" id="sl_${si}_${sl}" onclick="trigFile(${si},${sl})">
+              <input type="file" accept="image/*" id="fi_${si}_${sl}" onchange="onFile(event,${si},${sl})">
+              <div class="slot-ph">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>Foto ${sl+1}</span>
+              </div>
+              <img id="im_${si}_${sl}" src="" style="display:none">
+              <!-- Timestamp overlay pojok kanan atas -->
+              <div class="ts-overlay" id="tso_${si}_${sl}">
+                <span class="ts-date" id="tsd_${si}_${sl}"></span>
+                <span class="ts-loc" id="tsl_${si}_${sl}"></span>
+              </div>
+              <button class="slot-rmv" onclick="rmPhoto(event,${si},${sl})">×</button>
+            </div>
+            <!-- SETTINGS PER FOTO -->
+            <div class="photo-settings hidden" id="ps_${si}_${sl}">
+              <div class="ps-title">⚙️ Setting Foto ${sl+1}</div>
+              <div class="ps-row">
+                <label>⏰ Jam</label>
+                <input type="time" class="ps-inp" id="psj_${si}_${sl}" value="" oninput="updateOverlay(${si},${sl})">
+              </div>
+              <div class="ps-row">
+                <label>📍 Area</label>
+                <input type="text" class="ps-inp" id="psk_${si}_${sl}" value="${sch.kelurahan}" placeholder="Lambaro Skep" oninput="updateOverlay(${si},${sl})">
+              </div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    c.appendChild(div);
+  });
+}
+
+function togSch(si){
+  document.getElementById('sb'+si).classList.toggle('open');
+  document.getElementById('chev'+si).classList.toggle('open');
+}
+function trigFile(si,sl){document.getElementById(`fi_${si}_${sl}`).click()}
+
+function onFile(e,si,sl){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    // Set default jam = now
+    const jamNow=nowJam();
+    document.getElementById(`psj_${si}_${sl}`).value=jamNow;
+    const kelurahan=SCHOOLS[si].kelurahan;
+    document.getElementById(`psk_${si}_${sl}`).value=kelurahan;
+
+    const imgEl=document.getElementById(`im_${si}_${sl}`);
+    imgEl.src=ev.target.result; imgEl.style.display='block';
+    document.getElementById(`sl_${si}_${sl}`).classList.add('has');
+
+    // Simpan data foto
+    const tgl=document.getElementById('inTgl').value;
+    pData[si][sl]={file:f,url:ev.target.result,tgl:tgl,jam:jamNow,kelurahan};
+
+    // Tampilkan settings
+    document.getElementById(`ps_${si}_${sl}`).classList.remove('hidden');
+
+    updateOverlay(si,sl);
+    updCount(si);
+  };
+  r.readAsDataURL(f);
+}
+
+function updateOverlay(si,sl){
+  const tgl=document.getElementById('inTgl').value;
+  const jam=document.getElementById(`psj_${si}_${sl}`).value;
+  const kel=document.getElementById(`psk_${si}_${sl}`).value;
+
+  // Update pData
+  if(pData[si][sl]){
+    pData[si][sl].tgl=tgl; pData[si][sl].jam=jam; pData[si][sl].kelurahan=kel;
+  }
+
+  // Update overlay di slot preview
+  const ts=fmtCameraTs(tgl,jam,kel);
+  document.getElementById(`tsd_${si}_${sl}`).textContent=ts.line1;
+  document.getElementById(`tsl_${si}_${sl}`).textContent=ts.line2;
+  document.getElementById(`tsd_${si}_${sl}`).style.whiteSpace='nowrap';
+  document.getElementById(`tsl_${si}_${sl}`).style.whiteSpace='pre-line';
+}
+
+function rmPhoto(e,si,sl){
+  e.stopPropagation();
+  pData[si][sl]=null;
+  const slEl=document.getElementById(`sl_${si}_${sl}`);
+  document.getElementById(`im_${si}_${sl}`).src='';
+  document.getElementById(`im_${si}_${sl}`).style.display='none';
+  slEl.classList.remove('has');
+  document.getElementById(`fi_${si}_${sl}`).value='';
+  document.getElementById(`ps_${si}_${sl}`).classList.add('hidden');
+  updCount(si);
+}
+function updCount(si){
+  document.getElementById('pc'+si).textContent=pData[si].filter(Boolean).length+' foto';
+}
+function resetForm(){
+  document.getElementById('inTgl').value=todayStr();
+  document.getElementById('inKet').value='';
+  pData=Array.from({length:9},()=>[null,null,null]);
+  buildSchoolsUI();
+}
+
+// ══════════════════════════
+//  SAVE
+// ══════════════════════════
+async function saveDoc(){
+  const tgl=document.getElementById('inTgl').value;
+  if(!tgl){toast('Pilih tanggal!',true);return}
+  if(!pData.flat().filter(Boolean).length){toast('Upload minimal 1 foto!',true);return}
+  const btn=document.getElementById('btnSave');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Menyimpan...';
+  try{
+    const ket=document.getElementById('inKet').value;
+    const schools=SCHOOLS.map((sch,si)=>({
+      name:sch.name,
+      photos:[0,1,2].map(sl=>{
+        const p=pData[si][sl]; if(!p)return null;
+        return{url:p.url,tgl:p.tgl||tgl,jam:p.jam||'',kelurahan:p.kelurahan||sch.kelurahan,path:null};
+      })
+    }));
+    const obj={id:'local_'+Date.now(),tanggal:tgl,hari:getHari(tgl),keterangan:ket,schools,printed:false,createdAt:new Date().toISOString()};
+    const data=getLocal(); data.unshift(obj); setLocal(data);
+    toast('Tersimpan ✓'); resetForm(); nav('daftar');
+  }catch(e){toast('Gagal: '+e.message,true)}
+  finally{btn.disabled=false;btn.innerHTML='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi'}
+}
+
+// ══════════════════════════
+//  DASHBOARD
+// ══════════════════════════
+function renderDashboard(){
+  const docs=getAllDocs();
+  const now=new Date(); const tm=now.toISOString().substring(0,7);
+  const fv=document.getElementById('fMonth').value||tm;
+  document.getElementById('sTotal').textContent=docs.length;
+  document.getElementById('sBulan').textContent=docs.filter(d=>ym(d.tanggal)===tm).length;
+  document.getElementById('sBulanLbl').textContent=BULAN[now.getMonth()]+' '+now.getFullYear();
+  document.getElementById('sFoto').textContent=docs.reduce((s,d)=>s+(d.schools||[]).reduce((ss,sc)=>ss+(sc.photos||[]).filter(Boolean).length,0),0);
+  document.getElementById('sCetak').textContent=docs.filter(d=>d.printed).length;
+  const fil=docs.filter(d=>ym(d.tanggal)===fv);
+  const tb=document.getElementById('dbTbody');
+  if(!fil.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">Tidak ada data untuk periode ini</div></td></tr>';return}
+  tb.innerHTML=fil.map(d=>{
+    const sc=(d.schools||[]).filter(s=>(s.photos||[]).some(Boolean)).length;
+    const fc=(d.schools||[]).reduce((s,x)=>s+(x.photos||[]).filter(Boolean).length,0);
+    const dm=d.isDemo?'<span class="badge bo" style="margin-left:5px;font-size:9px">DEMO</span>':'';
+    return`<tr><td>${d.tanggal}</td><td>${d.hari||getHari(d.tanggal)}</td><td>${sc}/${SCHOOLS.length}${dm}</td><td>${fc}</td><td>${d.printed?'<span class="badge bg">✓</span>':'<span class="badge bo">⏳</span>'}</td><td><button class="btn bq sm" onclick="nav('daftar')">Detail</button></td></tr>`;
+  }).join('');
+}
+
+// ══════════════════════════
+//  DAFTAR
+// ══════════════════════════
+function renderDaftar(){
+  const docs=getAllDocs();
+  const fv=document.getElementById('fDaftar').value||new Date().toISOString().substring(0,7);
+  const fil=docs.filter(d=>ym(d.tanggal)===fv);
+  const tb=document.getElementById('dfTbody');
+  if(!fil.length){tb.innerHTML='<tr><td colspan="7"><div class="empty">Tidak ada data</div></td></tr>';return}
+  tb.innerHTML=fil.map(d=>{
+    const sc=(d.schools||[]).filter(s=>(s.photos||[]).some(Boolean)).length;
+    const fc=(d.schools||[]).reduce((s,x)=>s+(x.photos||[]).filter(Boolean).length,0);
+    const dm=d.isDemo?'<span class="badge bo" style="margin-left:4px;font-size:9px">DEMO</span>':'';
+    const delBtn=d.isDemo
+      ?`<button class="btn sm" style="background:#ddd;color:#999;cursor:not-allowed" disabled>🗑️</button>`
+      :`<button class="btn brd sm" onclick="openDel('${d.id}')">🗑️</button>`;
+    return`<tr>
+      <td>${d.tanggal}</td><td>${d.hari||getHari(d.tanggal)}</td>
+      <td>${d.keterangan||'—'}${dm}</td>
+      <td><span class="badge bg">${sc} sek.</span></td>
+      <td>${fc}</td>
+      <td>${d.printed?'<span class="badge bg">✓ Cetak</span>':'<span class="badge bx">Belum</span>'}</td>
+      <td>
+        <div class="flex gap2" style="justify-content:center;flex-wrap:wrap">
+          <button class="btn sm bp" onclick="openPrint('${d.id}')">🖨️ Print/PDF</button>
+          <button class="btn bq sm" onclick="openEdit2('${d.id}')">✏️</button>
+          ${delBtn}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════
+//  DELETE / EDIT
+// ══════════════════════════
+let _delId=null;
+function openDel(id){_delId=id;openMo('moDel')}
+function confirmDel(){
+  if(!_delId)return;
+  setLocal(getLocal().filter(d=>d.id!==_delId));
+  toast('Dihapus'); closeMo('moDel'); renderDaftar(); renderDashboard();
+}
+
+let _editId=null;
+function openEdit2(id){
+  _editId=id;
+  const d=getAllDocs().find(x=>x.id===id); if(!d)return;
+  document.getElementById('edTgl').value=d.tanggal;
+  document.getElementById('edKet').value=d.keterangan||'';
+  openMo('moEdit');
+}
+function confirmEdit(){
+  const tgl=document.getElementById('edTgl').value;
+  const ket=document.getElementById('edKet').value;
+  if(_editId==='demo_20260315'){
+    const dm=getDemo(); dm.tanggal=tgl; dm.keterangan=ket; dm.hari=getHari(tgl);
+    toast('Data demo diperbarui ✓');
+  } else {
+    const data=getLocal(); const i=data.findIndex(d=>d.id===_editId);
+    if(i>-1){data[i].tanggal=tgl;data[i].keterangan=ket;data[i].hari=getHari(tgl);setLocal(data)}
+    toast('Diperbarui ✓');
+  }
+  closeMo('moEdit'); renderDaftar(); renderDashboard();
+}
+
+// ══════════════════════════════════════════════
+//  BUILD A4 PAGES
+//  Semua sekolah dalam 1-2 halaman A4
+//  Layout: tiap baris = 1 sekolah (label kiri + 3 foto kanan)
+//  Timestamp pojok kanan atas foto, gaya kamera
+// ══════════════════════════════════════════════
+function buildA4Pages(d){
+  const allSchools=(d.schools||[]);
+  // Bagi sekolah ke halaman: maks 5 sekolah per halaman (jadi 9 → 5+4 = 2 hal)
+  // Setiap baris sekolah tingginya ~14% dari A4, header ~10%, jadi 5/hal aman
+  const perPage=5;
+  const pages=[];
+  for(let i=0;i<allSchools.length;i+=perPage){
+    pages.push(allSchools.slice(i,i+perPage));
+  }
+
+  return pages.map((schoolChunk, pi)=>`
+    <div class="a4-page">
+      <!-- HEADER -->
+      <div class="a4-hdr">
+        <div class="t1">DOKUMENTASI DISTRIBUSI SPPG</div>
+        <div class="t2">Kuta Alam Mulia 2 — Banda Aceh</div>
+        <div class="t3">${fmtTgl(d.tanggal)}${d.keterangan?' &nbsp;·&nbsp; '+d.keterangan:''}${pages.length>1?' &nbsp;·&nbsp; Halaman '+(pi+1)+'/'+pages.length:''}</div>
+      </div>
+
+      <!-- ROWS SEKOLAH -->
+      ${schoolChunk.map(s=>{
+        const info=SCHOOLS.find(x=>x.name===s.name)||{};
+        const photos=[0,1,2].map(i=>{
+          const p=(s.photos||[])[i];
+          if(!p) return`<div class="a4-photo-box"><div class="a4-photo-empty">—</div></div>`;
+
+          // Format timestamp gaya kamera
+          const ptgl=p.tgl||d.tanggal;
+          const pjam=p.jam||'';
+          const pkel=p.kelurahan||info.kelurahan||'Kuta Alam';
+          const dd2=new Date(ptgl+'T00:00:00');
+          const ddStr=dd2.getDate().toString().padStart(2,'0');
+          const mmStr=(dd2.getMonth()+1).toString().padStart(2,'0');
+          const yyStr=dd2.getFullYear().toString().substring(2);
+          const tsLine1=`${ddStr}/${mmStr}/${yyStr}${pjam?', '+pjam:''}`;
+          const tsLine2=`Banda Aceh, Aceh\nIndonesia\n${pkel}`;
+
+          return`<div class="a4-photo-box">
+            <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block">
+            <div class="a4-ts">
+              <span class="ts-d">${tsLine1}</span>
+              <span class="ts-l" style="white-space:pre-line">${tsLine2}</span>
+            </div>
+          </div>`;
+        }).join('');
+
+        return`<div class="a4-sch-row">
+          <div class="a4-sch-label">${s.name}</div>
+          <div class="a4-sch-photos">${photos}</div>
+        </div>`;
+      }).join('')}
+    </div>`
+  ).join('');
+}
+
+// ══════════════════════════
+//  PRINT MODAL
+// ══════════════════════════
+let _printId=null;
+function openPrint(id){
+  _printId=id;
+  const d=getAllDocs().find(x=>x.id===id); if(!d)return;
+  document.getElementById('pmBody').innerHTML=buildA4Pages(d);
+  openMo('moPrint');
+  markPrinted(id);
+}
+
+function doPrint(){
+  const d=getAllDocs().find(x=>x.id===_printId); if(!d)return;
+  const pa=document.getElementById('printArea');
+  pa.innerHTML=buildA4Pages(d);
+  pa.style.display='block';
+  window.print();
+  setTimeout(()=>{pa.innerHTML='';pa.style.display='none'},2000);
+}
+
+function doSaveHTML(){
+  const d=getAllDocs().find(x=>x.id===_printId); if(!d)return;
+  const pages=buildA4Pages(d);
+  const css=`
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#ddd;padding:20px}
+.print-tip{background:#1a6b3c;color:#fff;padding:13px 18px;border-radius:8px;margin-bottom:16px;font-size:13px;font-weight:600;max-width:794px;margin-left:auto;margin-right:auto}
+.print-tip em{font-style:normal;opacity:.8;font-weight:400}
+@media print{body{background:#fff;padding:0}.print-tip{display:none}@page{size:A4;margin:0}.a4-page{box-shadow:none!important;margin:0!important;border-radius:0!important;width:210mm!important;padding:12mm 13mm!important;page-break-after:always}}
+.a4-page{width:794px;background:#fff;padding:28px 32px;margin:0 auto 16px;box-shadow:0 4px 20px rgba(0,0,0,.18);border-radius:3px;font-family:system-ui,sans-serif}
+.a4-hdr{text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2.5px solid #1a6b3c}
+.a4-hdr .t1{font-size:14px;font-weight:800;color:#1a6b3c;letter-spacing:.7px;text-transform:uppercase}
+.a4-hdr .t2{font-size:10.5px;font-weight:600;color:#333;margin-top:2px}
+.a4-hdr .t3{font-size:10px;color:#6b7c6e;margin-top:3px}
+.a4-sch-row{display:flex;align-items:stretch;gap:6px;margin-bottom:7px;padding-bottom:7px;border-bottom:1px solid #e8ede8}
+.a4-sch-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.a4-sch-label{width:110px;flex-shrink:0;display:flex;align-items:center;font-size:8.5px;font-weight:800;color:#1a6b3c;padding:4px 6px;background:#e8f5ee;border-radius:5px;border-left:3px solid #1a6b3c;line-height:1.3}
+.a4-sch-photos{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.a4-photo-box{position:relative;aspect-ratio:4/3;border-radius:5px;overflow:hidden;background:#f0f0f0;border:1px solid #ddd}
+.a4-photo-box img{width:100%;height:100%;object-fit:cover;display:block}
+.a4-photo-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:8px}
+.a4-ts{position:absolute;top:4px;right:5px;text-align:right;pointer-events:none;font-family:'Courier New',Courier,monospace;line-height:1.4}
+.ts-d{display:block;font-size:7px;font-weight:400;color:#fff;letter-spacing:.3px;text-shadow:1px 1px 2px rgba(0,0,0,.95)}
+.ts-l{display:block;font-size:5.5px;font-weight:400;color:#fff;letter-spacing:.2px;text-shadow:1px 1px 2px rgba(0,0,0,.95);white-space:pre-line}
+`;
+  const html=`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>SPPG_${d.tanggal}</title><style>${css}</style></head><body>
+<div class="print-tip">💡 Cara simpan PDF: <em>Tekan Ctrl+P → Destination: Save as PDF → klik Save</em></div>
+${pages}</body></html>`;
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`SPPG_Mulia2_${d.tanggal}.html`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast('File HTML diunduh — buka di browser lalu Ctrl+P ✓');
+}
+
+function markPrinted(id){
+  if(id==='demo_20260315'){if(_demo)_demo.printed=true;return}
+  const data=getLocal(); const i=data.findIndex(d=>d.id===id);
+  if(i>-1){data[i].printed=true;setLocal(data)}
+  setTimeout(()=>{renderDaftar();renderDashboard()},300);
+}
+
+// ══════════════════════════
+//  INIT
+// ══════════════════════════
+function init(){
+  const now=new Date();
+  document.getElementById('tbDate').textContent=`${HARI[now.getDay()]}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`;
+  document.getElementById('fMonth').value='2026-03';
+  document.getElementById('fDaftar').value='2026-03';
+  document.getElementById('inTgl').value=todayStr();
+  buildSchoolsUI();
+  tryInitFb().catch(()=>{});
+  renderDashboard();
+}
+init();
+</script>
+</body>
+</html>
