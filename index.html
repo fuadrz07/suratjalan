@@ -1449,10 +1449,12 @@ function confirmDelete() {
 // ════════════════════════════════════════════════════
 let _editId = null;
 let _editNewPhotos = {};
+let _editDeletedPhotos = {};
 
 async function openEdit(id) {
   _editId = id;
   _editNewPhotos = {};
+  _editDeletedPhotos = {};
 
   const docs = await getAllDocs();
   const d = docs.find(x => x.id === id);
@@ -1476,15 +1478,25 @@ async function openEdit(id) {
           const hasImg = p && p.url;
           return `<div>
             <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">${SLOT_LABELS[sl]}</div>
-            <div style="aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:var(--ltr);border:1.5px dashed var(--border);cursor:pointer;position:relative" onclick="trigEditFile(${si},${sl})">
+            <div id="eslot-${si}-${sl}" style="aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:var(--ltr);border:1.5px dashed var(--border);position:relative">
               <input type="file" accept="image/*" id="efi-${si}-${sl}" style="display:none" onchange="onEditFile(event,${si},${sl})">
               ${hasImg
-                ? `<img id="eim-${si}-${sl}" src="${p.url}" style="width:100%;height:100%;object-fit:cover">`
-                : `<div id="eim-${si}-${sl}" style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;color:var(--muted)">Tap untuk ganti</div>`
+                ? `<img id="eim-${si}-${sl}" src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block">`
+                : `<div id="eim-${si}-${sl}" style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;color:var(--muted);cursor:pointer" onclick="trigEditFile(${si},${sl})">
+                     <div style="text-align:center">
+                       <div style="font-size:22px;margin-bottom:4px">📷</div>
+                       <div>Tap upload foto</div>
+                     </div>
+                   </div>`
               }
-              <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(7,30,73,.55);color:#fff;font-size:9px;text-align:center;padding:3px">
-                ${hasImg ? '↑ Tap ganti foto' : '↑ Tap upload foto'}
+              ${hasImg ? `
+              <!-- Tombol GANTI (bawah) -->
+              <div onclick="trigEditFile(${si},${sl})" style="position:absolute;bottom:0;left:0;right:${hasImg?'30px':'0'};background:rgba(7,30,73,.6);color:#fff;font-size:9px;text-align:center;padding:4px;cursor:pointer">
+                ↑ Ganti
               </div>
+              <!-- Tombol HAPUS (pojok kanan bawah) -->
+              <button onclick="deleteEditPhoto(${si},${sl})" style="position:absolute;bottom:0;right:0;width:30px;background:rgba(214,48,49,.85);color:#fff;border:none;font-size:13px;padding:3px 0;cursor:pointer;height:24px;display:flex;align-items:center;justify-content:center" title="Hapus foto">×</button>
+              ` : ''}
             </div>
           </div>`;
         }).join('')}
@@ -1502,19 +1514,41 @@ function trigEditFile(si, sl) {
 function onEditFile(e, si, sl) {
   const file = e.target.files[0];
   if (!file) return;
+
+  // Hapus dari daftar yang mau dihapus (kalau sebelumnya ditandai hapus)
+  delete _editDeletedPhotos[`${si}_${sl}`];
+
   _editNewPhotos[`${si}_${sl}`] = file;
   const url = URL.createObjectURL(file);
-  const el = document.getElementById(`eim-${si}-${sl}`);
-  if (el) {
-    if (el.tagName === 'IMG') {
-      el.src = url;
-    } else {
-      const img = document.createElement('img');
-      img.id = el.id;
-      img.src = url;
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover';
-      el.replaceWith(img);
-    }
+
+  // Update tampilan slot
+  const slotDiv = document.getElementById(`eslot-${si}-${sl}`);
+  if (slotDiv) {
+    slotDiv.innerHTML = `
+      <input type="file" accept="image/*" id="efi-${si}-${sl}" style="display:none" onchange="onEditFile(event,${si},${sl})">
+      <img id="eim-${si}-${sl}" src="${url}" style="width:100%;height:100%;object-fit:cover;display:block">
+      <div onclick="trigEditFile(${si},${sl})" style="position:absolute;bottom:0;left:0;right:30px;background:rgba(7,30,73,.6);color:#fff;font-size:9px;text-align:center;padding:4px;cursor:pointer">↑ Ganti</div>
+      <button onclick="deleteEditPhoto(${si},${sl})" style="position:absolute;bottom:0;right:0;width:30px;background:rgba(214,48,49,.85);color:#fff;border:none;font-size:13px;padding:3px 0;cursor:pointer;height:24px;display:flex;align-items:center;justify-content:center" title="Hapus foto">×</button>
+    `;
+  }
+}
+
+// Tandai foto untuk dihapus
+function deleteEditPhoto(si, sl) {
+  _editDeletedPhotos[`${si}_${sl}`] = true;
+  delete _editNewPhotos[`${si}_${sl}`];
+
+  // Tampilkan slot kosong
+  const slotDiv = document.getElementById(`eslot-${si}-${sl}`);
+  if (slotDiv) {
+    slotDiv.innerHTML = `
+      <input type="file" accept="image/*" id="efi-${si}-${sl}" style="display:none" onchange="onEditFile(event,${si},${sl})">
+      <div id="eim-${si}-${sl}" style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;color:var(--muted);cursor:pointer;flex-direction:column;gap:4px" onclick="trigEditFile(${si},${sl})">
+        <div style="font-size:20px;opacity:.4">🗑️</div>
+        <div style="color:var(--red);font-size:10px;font-weight:700">Foto dihapus</div>
+        <div style="font-size:9.5px;color:var(--muted)">Tap untuk upload baru</div>
+      </div>
+    `;
   }
 }
 
@@ -1533,7 +1567,15 @@ async function confirmEdit() {
       local[idx].keterangan = ket;
       local[idx].hari       = getDayName(tgl);
 
-      // Handle new photos
+      // Handle foto yang DIHAPUS
+      Object.keys(_editDeletedPhotos).forEach(key => {
+        const [si, sl] = key.split('_').map(Number);
+        if (local[idx].schools?.[si]?.photos) {
+          local[idx].schools[si].photos[sl] = null;
+        }
+      });
+
+      // Handle foto yang DIGANTI/BARU
       if (Object.keys(_editNewPhotos).length > 0) {
         await Promise.all(Object.entries(_editNewPhotos).map(([key, file]) => new Promise(resolve => {
           const [si, sl] = key.split('_').map(Number);
@@ -1556,9 +1598,10 @@ async function confirmEdit() {
 
       setLocal(local);
 
-      // Firebase background
+      // Firebase background update
+      const hasChanges = Object.keys(_editNewPhotos).length > 0 || Object.keys(_editDeletedPhotos).length > 0;
       const updateData = { tanggal: tgl, keterangan: ket, hari: getDayName(tgl) };
-      if (Object.keys(_editNewPhotos).length > 0) updateData.schools = local[idx].schools;
+      if (hasChanges) updateData.schools = local[idx].schools;
       fbUpdate(local[idx].fbId || _editId, updateData);
     }
 
@@ -1570,6 +1613,7 @@ async function confirmEdit() {
   hideLoader();
   closeModal('moEdit');
   _editNewPhotos = {};
+  _editDeletedPhotos = {};
   renderDashboard();
   renderDaftar();
 }
