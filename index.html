@@ -480,7 +480,7 @@ input[type=month]{padding:8px 12px;border-radius:9px;border:1.5px solid var(--bo
       <h3>📄 Preview Cetak A4</h3>
       <div class="pm-actions">
         <button class="btn sm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25)" onclick="doPrint()">🖨️ Print</button>
-        <button class="btn sm" style="background:var(--gold);color:#fff" onclick="doSaveHTML()">⬇️ HTML</button>
+        <button class="btn sm" style="background:#e8a020;color:#fff" onclick="doSavePDF()">⬇️ PDF</button>
         <button class="btn sm" style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)" onclick="closeMo('moPrint')">✕</button>
       </div>
     </div>
@@ -1146,41 +1146,195 @@ async function confirmEdit(){
   }
 }
 
-// ══ BUILD A4 — pakai url dari data (base64 atau Firebase URL) ══
+// ══ KOP SURAT — hanya di halaman pertama ══
+function buildKopSurat(d){
+  return`<div class="kop-surat">
+    <div class="kop-logo">
+      <div class="kop-logo-circle">
+        <svg width="38" height="38" viewBox="0 0 100 100" fill="none">
+          <circle cx="50" cy="50" r="48" fill="#071e49" stroke="#c9960a" stroke-width="4"/>
+          <text x="50" y="42" text-anchor="middle" fill="#fff" font-size="14" font-weight="800" font-family="serif">SPPG</text>
+          <text x="50" y="56" text-anchor="middle" fill="#c9960a" font-size="9" font-family="serif">MULIA 2</text>
+          <text x="50" y="68" text-anchor="middle" fill="#fff" font-size="7" font-family="sans-serif">BANDA ACEH</text>
+        </svg>
+      </div>
+    </div>
+    <div class="kop-text">
+      <div class="kop-instansi">PEMERINTAH KOTA BANDA ACEH</div>
+      <div class="kop-unit">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+      <div class="kop-nama">SPPG KUTA ALAM MULIA 2</div>
+      <div class="kop-alamat">Jl. Kuta Alam, Banda Aceh · Telp. — · Kode Pos 23125</div>
+    </div>
+  </div>
+  <div class="kop-line"></div>
+  <div class="kop-judul">
+    <div class="kop-judul-title">DOKUMENTASI DISTRIBUSI SPPG</div>
+    <div class="kop-judul-sub">Kuta Alam Mulia 2 — Banda Aceh</div>
+    <div class="kop-judul-tgl">${fmtTgl(d.tanggal)}${d.keterangan?' &nbsp;·&nbsp; '+d.keterangan:''}</div>
+  </div>`;
+}
+
+// ══ BUILD A4 PAGES — kop hanya halaman 1, A4 benar ══
 async function buildA4Pages(d){
   const allSch=d.schools||[];
+  // Saring hanya sekolah yang ada fotonya
+  const withPhoto=allSch.filter(s=>(s.photos||[]).some(p=>p&&p.url));
   const perPage=5; const pages=[];
-  for(let i=0;i<allSch.length;i+=perPage) pages.push(allSch.slice(i,i+perPage));
+  for(let i=0;i<withPhoto.length;i+=perPage) pages.push(withPhoto.slice(i,i+perPage));
+  if(!pages.length) pages.push([]);
 
   return pages.map((chunk,pi)=>`
     <div class="a4-page">
-      <div class="a4-hdr">
-        <div class="t1">DOKUMENTASI DISTRIBUSI SPPG</div>
-        <div class="t2">Kuta Alam Mulia 2 — Banda Aceh</div>
-        <div class="t3">${fmtTgl(d.tanggal)}${d.keterangan?' · '+d.keterangan:''}${pages.length>1?' · Hal '+(pi+1)+'/'+pages.length:''}</div>
-      </div>
-      ${chunk.map(s=>{
-        const photos=(s.photos||[]).filter(p=>p&&p.url);
-        if(!photos.length) return '';
-        const info=SCHOOLS.find(x=>x.name===s.name)||{};
-        const cols=photos.map(p=>{
-          const pd=new Date((p.tgl||d.tanggal)+'T00:00:00');
-          const ts=`${pd.getDate().toString().padStart(2,'0')}/${(pd.getMonth()+1).toString().padStart(2,'0')}/${pd.getFullYear().toString().substring(2)}${p.jam?', '+p.jam:''}`;
-          const loc=`Banda Aceh, Aceh\nIndonesia\n${p.kel||info.kel||'Kuta Alam'}`;
-          return`<div class="a4-photo-box">
-            <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block" crossorigin="anonymous">
-            <div class="a4-ts"><span class="ts-d">${ts}</span><span class="ts-l" style="white-space:pre-line">${loc}</span></div>
+      ${pi===0 ? buildKopSurat(d) : `
+      <div class="a4-hdr-simple">
+        <span class="a4-hdr-s1">DOKUMENTASI DISTRIBUSI SPPG — Kuta Alam Mulia 2</span>
+        <span class="a4-hdr-s2">${fmtTgl(d.tanggal)} · Hal ${pi+1}/${pages.length}</span>
+      </div>`}
+      <div class="a4-schools">
+        ${chunk.map(s=>{
+          const photos=(s.photos||[]).filter(p=>p&&p.url);
+          if(!photos.length) return '';
+          const info=SCHOOLS.find(x=>x.name===s.name)||{};
+          const cols=photos.map(p=>{
+            const pd=new Date((p.tgl||d.tanggal)+'T00:00:00');
+            const dd=pd.getDate().toString().padStart(2,'0');
+            const mm=(pd.getMonth()+1).toString().padStart(2,'0');
+            const yy=pd.getFullYear().toString().substring(2);
+            const ts=`${dd}/${mm}/${yy}${p.jam?', '+p.jam:''}`;
+            const loc=`Banda Aceh, Aceh\nIndonesia\n${p.kel||info.kel||'Kuta Alam'}`;
+            return`<div class="a4-photo-box">
+              <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block">
+              <div class="a4-ts">
+                <span class="ts-d">${ts}</span>
+                <span class="ts-l" style="white-space:pre-line">${loc}</span>
+              </div>
+            </div>`;
+          }).join('');
+          const grid=photos.length===1?'1fr':'1fr 1fr';
+          return`<div class="a4-sch-row">
+            <div class="a4-sch-label">${s.name}</div>
+            <div class="a4-sch-photos" style="grid-template-columns:${grid}">${cols}</div>
           </div>`;
-        }).join('');
-        return`<div class="a4-sch-row">
-          <div class="a4-sch-label">${s.name}</div>
-          <div class="a4-sch-photos" style="grid-template-columns:${photos.length===1?'1fr':'1fr 1fr'}">${cols}</div>
-        </div>`;
-      }).join('')}
-    </div>`).join('');
+        }).join('')}
+      </div>
+    </div>`
+  ).join('');
 }
 
-// ══ PRINT ══
+// ══ CSS untuk PDF/Print ══
+function getPdfCSS(){
+  return`
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#e8e8e8;padding:16px}
+@media print{
+  body{background:#fff;padding:0}
+  @page{size:210mm 297mm;margin:0}
+  .a4-page{box-shadow:none!important;margin:0!important;border-radius:0!important;
+    width:210mm!important;min-height:297mm!important;padding:12mm 14mm 14mm!important;
+    page-break-after:always;break-after:page}
+}
+/* A4 PAGE */
+.a4-page{
+  width:794px;min-height:1122px;background:#fff;
+  padding:28px 36px 32px;margin:0 auto 16px;
+  box-shadow:0 4px 24px rgba(0,0,0,.18);border-radius:4px;
+  position:relative;
+}
+/* KOP SURAT */
+.kop-surat{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+.kop-logo-circle{width:56px;height:56px;flex-shrink:0}
+.kop-logo-circle svg{width:56px;height:56px}
+.kop-text{flex:1;text-align:center}
+.kop-instansi{font-size:10px;font-weight:600;color:#444;letter-spacing:.3px}
+.kop-unit{font-size:11px;font-weight:700;color:#222;margin-top:1px}
+.kop-nama{font-size:16px;font-weight:900;color:#071e49;letter-spacing:.5px;margin-top:2px;text-transform:uppercase}
+.kop-alamat{font-size:8.5px;color:#666;margin-top:3px}
+.kop-line{border:none;border-top:3px solid #071e49;margin:8px 0 4px;border-bottom:1px solid #c9960a}
+.kop-judul{text-align:center;margin-bottom:12px;padding-bottom:6px;border-bottom:1px dashed #c8d8ee}
+.kop-judul-title{font-size:12px;font-weight:800;color:#071e49;letter-spacing:.6px;text-transform:uppercase}
+.kop-judul-sub{font-size:9.5px;font-weight:600;color:#333;margin-top:2px}
+.kop-judul-tgl{font-size:9px;color:#5a6d8a;margin-top:3px}
+/* HEADER SIMPLE (halaman 2+) */
+.a4-hdr-simple{
+  display:flex;justify-content:space-between;align-items:center;
+  padding-bottom:7px;margin-bottom:10px;
+  border-bottom:2px solid #071e49;
+}
+.a4-hdr-s1{font-size:9px;font-weight:800;color:#071e49;text-transform:uppercase;letter-spacing:.4px}
+.a4-hdr-s2{font-size:8.5px;color:#5a6d8a}
+/* SCHOOLS */
+.a4-schools{display:flex;flex-direction:column;gap:7px}
+.a4-sch-row{display:flex;align-items:stretch;gap:7px;padding-bottom:7px;border-bottom:1px solid #eaeeea}
+.a4-sch-row:last-child{border-bottom:none;padding-bottom:0}
+.a4-sch-label{
+  width:100px;flex-shrink:0;display:flex;align-items:center;
+  font-size:7.5px;font-weight:800;color:#071e49;
+  padding:4px 6px;background:#dce8f8;border-radius:5px;
+  border-left:3px solid #071e49;line-height:1.35
+}
+.a4-sch-photos{flex:1;display:grid;gap:6px}
+.a4-photo-box{
+  position:relative;aspect-ratio:4/3;border-radius:5px;
+  overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee
+}
+.a4-photo-box img{width:100%;height:100%;object-fit:cover;display:block}
+.a4-ts{position:absolute;top:4px;right:5px;text-align:right;
+  font-family:'Courier New',Courier,monospace;line-height:1.4;pointer-events:none}
+.ts-d{display:block;font-size:7px;font-weight:400;color:#fff;
+  letter-spacing:.3px;text-shadow:1px 1px 2px rgba(0,0,0,.95)}
+.ts-l{display:block;font-size:5.5px;font-weight:400;color:#fff;
+  letter-spacing:.2px;text-shadow:1px 1px 2px rgba(0,0,0,.95);white-space:pre-line}
+`;
+}
+
+// ══ DOWNLOAD PDF — buka window baru, Ctrl+P → Save as PDF ══
+async function doSavePDF(){
+  const docs=await fetchDocs();
+  const d=docs.find(x=>x.id===_printId);
+  if(!d){toast('Data tidak ditemukan',true);return}
+
+  toast('Membuat PDF...');
+  const pages=await buildA4Pages(d);
+  const css=getPdfCSS();
+
+  const html=`<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>SPPG_Mulia2_${d.tanggal}</title>
+<style>${css}</style>
+</head>
+<body>
+<div style="max-width:794px;margin:0 auto 14px;background:#071e49;color:#fff;padding:11px 18px;border-radius:6px;font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:space-between" class="no-print">
+  <span>📄 SPPG Mulia 2 — ${fmtTgl(d.tanggal)}</span>
+  <span style="font-size:11px;opacity:.8">Tekan Ctrl+P → Pilih "Save as PDF" → Klik Save</span>
+</div>
+<style>@media print{.no-print{display:none!important}}</style>
+${pages}
+</body>
+</html>`;
+
+  // Buka di tab baru — browser akan print/save ke PDF
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const win=window.open(url,'_blank');
+  if(!win){
+    // Fallback: download file
+    const a=document.createElement('a');
+    a.href=url; a.download=`SPPG_Mulia2_${d.tanggal}.html`; a.click();
+    toast('File dibuka — tekan Ctrl+P untuk simpan PDF ✓');
+  } else {
+    // Auto trigger print dialog setelah halaman load
+    win.onload=()=>{
+      setTimeout(()=>{win.focus();win.print();},600);
+    };
+    toast('Pilih "Save as PDF" di dialog print ✓');
+  }
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+  markPrinted(_printId);
+}
+
+// ══ PRINT (via browser print dialog) ══
 let _printId=null;
 async function openPrint(id){
   _printId=id;
@@ -1188,31 +1342,15 @@ async function openPrint(id){
   const d=docs.find(x=>x.id===id||x.fbId===id);
   if(!d){toast('Data tidak ditemukan',true);return}
   const html=await buildA4Pages(d);
-  document.getElementById('pmBody').innerHTML=html;
+  // Inject CSS ke preview dalam modal
+  document.getElementById('pmBody').innerHTML=
+    `<style>${getPdfCSS()}.a4-page{margin:0 auto 14px;min-height:auto}</style>`+html;
   openMo('moPrint');
-  markPrinted(id);
 }
 function doPrint(){
-  const pa=document.getElementById('printArea');
-  // Gunakan konten pmBody yang sudah di-render (sudah ada foto dari IndexedDB)
-  pa.innerHTML=document.getElementById('pmBody').innerHTML;
-  pa.style.display='block';
-  window.print();
-  setTimeout(()=>{pa.innerHTML='';pa.style.display='none'},2500);
+  // Buka di tab baru dan print
+  doSavePDF();
 }
-async function doSaveHTML(){
-  const docs=await fetchDocs();const d=docs.find(x=>x.id===_printId);if(!d)return;
-  const pages=await buildA4Pages(d);
-  const css=`*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:#ddd;padding:20px}.tip{background:#071e49;color:#fff;padding:12px 18px;border-radius:8px;margin-bottom:14px;font-size:13px;font-weight:600;max-width:794px;margin:0 auto 14px}@media print{body{background:#fff;padding:0}.tip{display:none}@page{size:A4;margin:0}.a4-page{box-shadow:none!important;margin:0!important;width:210mm!important;padding:11mm 12mm!important;page-break-after:always}}.a4-page{width:794px;background:#fff;padding:26px 30px;margin:0 auto 14px;box-shadow:0 4px 20px rgba(0,0,0,.15);border-radius:3px;font-family:system-ui,sans-serif}.a4-hdr{text-align:center;margin-bottom:13px;padding-bottom:10px;border-bottom:2.5px solid #071e49}.a4-hdr .t1{font-size:14px;font-weight:800;color:#071e49;letter-spacing:.7px;text-transform:uppercase}.a4-hdr .t2{font-size:10.5px;font-weight:600;color:#333;margin-top:2px}.a4-hdr .t3{font-size:10px;color:#5a6d8a;margin-top:3px}.a4-sch-row{display:flex;align-items:stretch;gap:6px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #e8edf5}.a4-sch-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}.a4-sch-label{width:105px;flex-shrink:0;display:flex;align-items:center;font-size:8px;font-weight:800;color:#071e49;padding:4px 6px;background:#dce8f8;border-radius:5px;border-left:3px solid #071e49;line-height:1.3}.a4-sch-photos{flex:1;display:grid;gap:5px}.a4-photo-box{position:relative;aspect-ratio:4/3;border-radius:5px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee}.a4-photo-box img{width:100%;height:100%;object-fit:cover;display:block}.a4-ts{position:absolute;top:4px;right:5px;text-align:right;font-family:'Courier New',Courier,monospace;line-height:1.4}.ts-d{display:block;font-size:7px;font-weight:400;color:#fff;letter-spacing:.3px;text-shadow:1px 1px 2px rgba(0,0,0,.95)}.ts-l{display:block;font-size:5.5px;font-weight:400;color:#fff;letter-spacing:.2px;text-shadow:1px 1px 2px rgba(0,0,0,.95);white-space:pre-line}`;
-  const html=`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>SPPG_${d.tanggal}</title><style>${css}</style></head><body><div class="tip">💡 Ctrl+P → Save as PDF</div>${pages}</body></html>`;
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`SPPG_Mulia2_${d.tanggal}.html`;a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),2000);
-  toast('HTML diunduh ✓');
-}
-
-async function markPrinted(id){
   try{
     const local=getLocal();
     const idx=local.findIndex(d=>d.id===id);
