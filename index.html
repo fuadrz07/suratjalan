@@ -457,16 +457,18 @@ input[type=month]{padding:8px 12px;border-radius:9px;border:1.5px solid var(--bo
 
 <!-- EDIT MODAL -->
 <div class="mo" id="moEdit">
-  <div class="mb">
+  <div class="mb" style="max-width:600px;max-height:90vh;overflow-y:auto;border-radius:16px 16px 0 0">
     <div class="mb-drag"></div>
     <h3>✏️ Edit Dokumentasi</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
       <div class="fg" style="margin:0"><label>Tanggal</label><input type="date" id="edTgl" class="fc"></div>
       <div class="fg" style="margin:0"><label>Keterangan</label><input type="text" id="edKet" class="fc"></div>
     </div>
+    <div style="font-size:12px;font-weight:700;color:var(--p);margin-bottom:8px">📸 Ganti Foto (opsional — tap foto untuk ganti)</div>
+    <div id="editPhotosCont" style="max-height:320px;overflow-y:auto"></div>
     <div class="m-act">
-      <button class="btn bq sm" onclick="closeMo('moEdit')">Batal</button>
-      <button class="btn bp sm" onclick="confirmEdit()">Simpan</button>
+      <button class="btn bq sm" onclick="closeMo('moEdit');_editPhotos={}">Batal</button>
+      <button class="btn bp sm" onclick="confirmEdit()">Simpan Perubahan</button>
     </div>
   </div>
 </div>
@@ -571,12 +573,16 @@ async function fetchDocs(){
 // ══ UI HELPERS ══
 function toast(msg,err=false){
   const t=document.getElementById('toast');
+  if(!t)return;
   t.textContent=msg;t.className='show'+(err?' err':'');
-  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3200);
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3500);
 }
-function loader(show,txt='Menyimpan...'){
-  document.getElementById('loaderTxt').textContent=txt;
-  document.getElementById('loader').className=show?'show':'';
+function loader(show,txt='Memproses...'){
+  const el=document.getElementById('loader');
+  const tEl=document.getElementById('loaderTxt');
+  if(!el)return;
+  if(tEl&&txt)tEl.textContent=txt;
+  el.className=show?'show':'';
 }
 function openMo(id){document.getElementById(id).classList.add('open')}
 function closeMo(id){document.getElementById(id).classList.remove('open')}
@@ -680,7 +686,6 @@ function trigFile(si,sl){document.getElementById(`fi_${si}_${sl}`).click()}
 function onFile(e,si,sl){
   const f=e.target.files[0];if(!f)return;
   const jam=nowJam(),kel=SCHOOLS[si].kel;
-  // Pakai ObjectURL — instan, tanpa FileReader, tanpa base64
   const objUrl=URL.createObjectURL(f);
   document.getElementById(`psj_${si}_${sl}`).value=jam;
   document.getElementById(`psk_${si}_${sl}`).value=kel;
@@ -689,9 +694,9 @@ function onFile(e,si,sl){
   document.getElementById(`sl_${si}_${sl}`).classList.add('has');
   document.getElementById(`ps_${si}_${sl}`).classList.remove('hidden');
   const tgl=document.getElementById('inTgl').value||todayStr();
-  // Hapus objectURL lama jika ada
   if(pData[si][sl]?.objUrl) URL.revokeObjectURL(pData[si][sl].objUrl);
-  pData[si][sl]={file:f, objUrl, tgl, jam, kel};
+  // Simpan _si _sl agar bisa di-map saat saveDoc
+  pData[si][sl]={file:f, objUrl, tgl, jam, kel, _si:si, _sl:sl};
   updateOv(si,sl); updCount(si);
 }
 
@@ -789,7 +794,7 @@ function resizeToBase64(file, maxPx=480, q=0.60){
 
 async function saveDoc(){
   const tgl=document.getElementById('inTgl').value;
-  if(!tgl){toast('Pilih tanggal!',true);return}
+  if(!tgl){toast('Pilih tanggal distribusi!',true);return}
   const allPhotos=pData.flat().filter(Boolean);
   if(!allPhotos.length){toast('Upload minimal 1 foto!',true);return}
 
@@ -801,26 +806,28 @@ async function saveDoc(){
     const ket=document.getElementById('inKet').value;
     const docId='doc_'+Date.now();
 
-    // STEP 1: Resize foto kecil di browser (hanya yang diupload)
-    // Ini cepat karena resolusi kecil (480px) dan hanya foto yang ada
-    const photoResults={};
-    for(let si=0;si<9;si++){
-      for(let sl=0;sl<2;sl++){
-        const p=pData[si][sl];
-        if(!p?.file) continue;
-        const b64=await resizeToBase64(p.file,480,0.60);
-        if(b64) photoResults[`${si}_${sl}`]=b64;
-      }
-    }
+    // Baca semua foto sebagai base64 via FileReader (reliable, tidak hang)
+    const photoB64={};
+    await Promise.all(
+      allPhotos.map(p=>{
+        const key=`${p._si}_${p._sl}`;
+        return new Promise(res=>{
+          const fr=new FileReader();
+          fr.onload=e=>{photoB64[key]=e.target.result;res()};
+          fr.onerror=()=>{photoB64[key]=p.objUrl||'';res()};
+          fr.readAsDataURL(p.file);
+        });
+      })
+    );
 
-    // STEP 2: Buat objek dokumen
+    // Buat schools dengan url foto
     const schools=SCHOOLS.map((sch,si)=>({
       name:sch.name,
       photos:[0,1].map(sl=>{
         const p=pData[si][sl];
-        if(!p?.file) return null;
+        if(!p?.file)return null;
         return{
-          url: photoResults[`${si}_${sl}`]||p.objUrl||'',
+          url:photoB64[`${si}_${sl}`]||p.objUrl||'',
           tgl:p.tgl||tgl, jam:p.jam||'',
           kel:p.kel||sch.kel, label:SLOT_LBL[sl]
         };
@@ -830,33 +837,34 @@ async function saveDoc(){
     const obj={
       id:docId, tanggal:tgl, hari:getHari(tgl),
       keterangan:ket, schools, printed:false,
-      createdAt:new Date().toISOString(),
-      synced:false
+      createdAt:new Date().toISOString(), synced:false
     };
 
-    // STEP 3: Simpan ke localStorage — INSTAN, tidak butuh internet
-    const localData=getLocal();
-    localData.unshift(obj);
-    setLocal(localData);
+    // Simpan ke localStorage — INSTAN
+    const local=getLocal();
+    local.unshift(obj);
+    setLocal(local);
 
-    // STEP 4: UI selesai — user bisa lanjut
+    // UI selesai
     btn.disabled=false;
-    btn.innerHTML='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi';
+    btn.innerHTML=SAVE_BTN_HTML;
     toast('✓ Tersimpan!');
     toggleInput();
     resetForm();
     renderDashboard();
 
-    // STEP 5: Sync ke Firebase di BACKGROUND — tidak block apapun
+    // Sync Firebase background
     syncToFirebase(obj);
 
   }catch(e){
     btn.disabled=false;
-    btn.innerHTML='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi';
+    btn.innerHTML=SAVE_BTN_HTML;
     toast('Gagal: '+e.message,true);
     console.error('saveDoc:',e);
   }
 }
+
+const SAVE_BTN_HTML='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi';
 
 // Sync ke Firebase Storage + Firestore di background
 async function syncToFirebase(obj){
@@ -995,34 +1003,147 @@ let _delId=null;
 function openDel(id){_delId=id;openMo('moDel')}
 async function confirmDel(){
   if(!_delId)return;
-  loader(true,'Menghapus...');
-  try{
-    if(window._fbOk&&window._db){const{doc,deleteDoc}=window._fb;await deleteDoc(doc(window._db,'surat_jalan',_delId))}
-    else setLocal(getLocal().filter(d=>d.id!==_delId));
-    toast('Dihapus ✓');
-  }catch(e){toast('Gagal: '+e.message,true)}
-  finally{loader(false)}
-  closeMo('moDel');renderDashboard();renderDaftar();
+  closeMo('moDel');
+  
+  // Hapus dari localStorage DULU — instan, tidak bisa gagal
+  const local=getLocal();
+  const filtered=local.filter(d=>d.id!==_delId);
+  setLocal(filtered);
+  toast('Dihapus ✓');
+  _delId=null;
+  renderDashboard();
+  renderDaftar();
+
+  // Hapus dari Firebase di background (tidak block UI)
+  if(window._fbOk&&window._db){
+    try{
+      const{doc,deleteDoc}=window._fb;
+      await deleteDoc(doc(window._db,'surat_jalan',_delId||''));
+    }catch(e){console.warn('Firebase delete:',e.message)}
+  }
 }
 
 // ══ EDIT ══
-let _editId=null;
+let _editId=null, _editDoc=null;
 async function openEdit2(id){
   _editId=id;
-  const docs=await fetchDocs();const d=docs.find(x=>x.id===id);if(!d)return;
-  document.getElementById('edTgl').value=d.tanggal;
-  document.getElementById('edKet').value=d.keterangan||'';
+  const docs=await fetchDocs();
+  _editDoc=docs.find(x=>x.id===id);
+  if(!_editDoc){toast('Data tidak ditemukan',true);return}
+  document.getElementById('edTgl').value=_editDoc.tanggal;
+  document.getElementById('edKet').value=_editDoc.keterangan||'';
+  // Build foto edit per sekolah
+  buildEditPhotos(_editDoc);
   openMo('moEdit');
 }
+
+// Data foto baru saat edit
+let _editPhotos={};
+
+function buildEditPhotos(d){
+  const cont=document.getElementById('editPhotosCont');
+  if(!cont)return;
+  _editPhotos={};
+  cont.innerHTML='';
+  (d.schools||[]).forEach((s,si)=>{
+    const hasPhotos=(s.photos||[]).some(Boolean);
+    const div=document.createElement('div');
+    div.style.cssText='margin-bottom:10px;padding:10px;background:#f8faff;border-radius:8px;border:1px solid var(--border)';
+    div.innerHTML=`
+      <div style="font-size:12px;font-weight:700;color:var(--p);margin-bottom:8px">${s.name}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${[0,1].map(sl=>{
+          const p=(s.photos||[])[sl];
+          const hasP=p&&p.url;
+          return`<div>
+            <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">${SLOT_LBL[sl]}</div>
+            <div style="position:relative;aspect-ratio:4/3;border-radius:7px;overflow:hidden;background:#eef2f8;border:1.5px dashed var(--border);cursor:pointer" onclick="trigEditFile(${si},${sl})">
+              <input type="file" accept="image/*" id="efi_${si}_${sl}" style="display:none" onchange="onEditFile(event,${si},${sl})">
+              ${hasP?`<img id="eimg_${si}_${sl}" src="${p.url}" style="width:100%;height:100%;object-fit:cover">`
+                    :`<div id="eimg_${si}_${sl}" style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:var(--muted)">Tap ganti foto</div>`}
+              <div id="eover_${si}_${sl}" style="position:absolute;bottom:0;left:0;right:0;background:rgba(7,30,73,.7);color:#fff;font-size:9px;text-align:center;padding:3px;display:none">Ganti ↑</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+function trigEditFile(si,sl){
+  document.getElementById(`efi_${si}_${sl}`)?.click();
+}
+
+function onEditFile(e,si,sl){
+  const f=e.target.files[0]; if(!f)return;
+  const objUrl=URL.createObjectURL(f);
+  _editPhotos[`${si}_${sl}`]={file:f,objUrl};
+  const imgEl=document.getElementById(`eimg_${si}_${sl}`);
+  if(imgEl){
+    imgEl.src=objUrl;
+    imgEl.style.cssText='width:100%;height:100%;object-fit:cover';
+    imgEl.tagName==='IMG'?imgEl.src=objUrl:null;
+    // Ganti div jadi img jika sebelumnya kosong
+    if(imgEl.tagName!=='IMG'){
+      const img=document.createElement('img');
+      img.id=imgEl.id;
+      img.src=objUrl;
+      img.style.cssText='width:100%;height:100%;object-fit:cover';
+      imgEl.parentNode.replaceChild(img,imgEl);
+    }
+  }
+}
+
 async function confirmEdit(){
+  if(!_editId||!_editDoc){closeMo('moEdit');return}
   const tgl=document.getElementById('edTgl').value;
   const ket=document.getElementById('edKet').value;
-  try{
-    if(window._fbOk&&window._db){const{doc,updateDoc}=window._fb;await updateDoc(doc(window._db,'surat_jalan',_editId),{tanggal:tgl,keterangan:ket,hari:getHari(tgl)})}
-    else{const d=getLocal();const i=d.findIndex(x=>x.id===_editId);if(i>-1){d[i].tanggal=tgl;d[i].keterangan=ket;d[i].hari=getHari(tgl);setLocal(d)}}
-    toast('Diperbarui ✓');
-  }catch(e){toast('Gagal: '+e.message,true)}
-  closeMo('moEdit');renderDashboard();renderDaftar();
+
+  // Update sekolah dengan foto baru jika ada
+  const updatedSchools=JSON.parse(JSON.stringify(_editDoc.schools||[]));
+  const hasNewPhotos=Object.keys(_editPhotos).length>0;
+
+  if(hasNewPhotos){
+    for(const key of Object.keys(_editPhotos)){
+      const [si,sl]=key.split('_').map(Number);
+      const pd=_editPhotos[key];
+      // Resize foto baru
+      const b64=await resizeToBase64(pd.file,480,0.60);
+      if(updatedSchools[si]&&updatedSchools[si].photos){
+        if(!updatedSchools[si].photos[sl])updatedSchools[si].photos[sl]={};
+        updatedSchools[si].photos[sl].url=b64||pd.objUrl;
+        updatedSchools[si].photos[sl].tgl=tgl;
+        updatedSchools[si].photos[sl].label=SLOT_LBL[sl];
+      }
+    }
+  }
+
+  // Update localStorage DULU — instan
+  const local=getLocal();
+  const idx=local.findIndex(d=>d.id===_editId);
+  if(idx>-1){
+    local[idx].tanggal=tgl;
+    local[idx].keterangan=ket;
+    local[idx].hari=getHari(tgl);
+    if(hasNewPhotos) local[idx].schools=updatedSchools;
+    setLocal(local);
+  }
+
+  toast('Diperbarui ✓');
+  closeMo('moEdit');
+  _editPhotos={};
+  renderDashboard();
+  renderDaftar();
+
+  // Sync ke Firebase background
+  if(window._fbOk&&window._db){
+    try{
+      const{doc,updateDoc}=window._fb;
+      const upd={tanggal:tgl,keterangan:ket,hari:getHari(tgl)};
+      if(hasNewPhotos)upd.schools=updatedSchools;
+      await updateDoc(doc(window._db,'surat_jalan',_editId),upd);
+    }catch(e){console.warn('Edit Firebase:',e.message)}
+  }
 }
 
 // ══ BUILD A4 — pakai url dari data (base64 atau Firebase URL) ══
@@ -1093,9 +1214,14 @@ async function doSaveHTML(){
 
 async function markPrinted(id){
   try{
-    if(window._fbOk&&window._db){const{doc,updateDoc}=window._fb;await updateDoc(doc(window._db,'surat_jalan',id),{printed:true})}
-    else{const d=getLocal();const i=d.findIndex(x=>x.id===id);if(i>-1){d[i].printed=true;setLocal(d)}}
-    setTimeout(()=>{renderDashboard();renderDaftar()},300);
+    const local=getLocal();
+    const idx=local.findIndex(d=>d.id===id);
+    if(idx>-1){local[idx].printed=true;setLocal(local)}
+    if(window._fbOk&&window._db){
+      const{doc,updateDoc}=window._fb;
+      updateDoc(doc(window._db,'surat_jalan',id),{printed:true}).catch(()=>{});
+    }
+    setTimeout(()=>{renderDashboard();renderDaftar()},200);
   }catch{}
 }
 
