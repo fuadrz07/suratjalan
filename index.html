@@ -730,24 +730,59 @@ function resetForm(){
 //  SIMPAN INSTAN — localStorage first, Firebase background
 // ══════════════════════════════════════════════
 
-// Simpan foto ke localStorage sebagai base64 kecil (resize dulu)
-function resizeToBase64(file, maxPx=480, q=0.6){
+// Resize foto → base64 kecil (480px). Kalau gagal → baca as dataURL biasa
+function resizeToBase64(file, maxPx=480, q=0.60){
   return new Promise(res=>{
+    // Fallback: baca langsung tanpa resize jika bukan image
+    if(!file.type.startsWith('image/')){
+      const fr=new FileReader();
+      fr.onload=e=>res(e.target.result);
+      fr.onerror=()=>res(null);
+      fr.readAsDataURL(file);
+      return;
+    }
     const img=new Image();
     const ou=URL.createObjectURL(file);
-    img.onload=()=>{
+    const timeout=setTimeout(()=>{
       URL.revokeObjectURL(ou);
-      let w=img.naturalWidth, h=img.naturalHeight;
+      // Fallback ke FileReader jika image load timeout
+      const fr=new FileReader();
+      fr.onload=e=>res(e.target.result);
+      fr.onerror=()=>res(null);
+      fr.readAsDataURL(file);
+    }, 8000);
+    img.onload=()=>{
+      clearTimeout(timeout);
+      URL.revokeObjectURL(ou);
+      let w=img.naturalWidth||img.width||maxPx;
+      let h=img.naturalHeight||img.height||maxPx;
+      if(w===0||h===0){res(null);return}
       if(w>maxPx||h>maxPx){
         if(w>=h){h=Math.round(h*maxPx/w);w=maxPx}
         else{w=Math.round(w*maxPx/h);h=maxPx}
       }
-      const cv=document.createElement('canvas');
-      cv.width=w; cv.height=h;
-      cv.getContext('2d').drawImage(img,0,0,w,h);
-      res(cv.toDataURL('image/jpeg',q));
+      try{
+        const cv=document.createElement('canvas');
+        cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        const b64=cv.toDataURL('image/jpeg',q);
+        res(b64||null);
+      }catch{
+        // Fallback jika canvas gagal (CORS, dll)
+        const fr=new FileReader();
+        fr.onload=e=>res(e.target.result);
+        fr.onerror=()=>res(null);
+        fr.readAsDataURL(file);
+      }
     };
-    img.onerror=()=>{URL.revokeObjectURL(ou);res(null)};
+    img.onerror=()=>{
+      clearTimeout(timeout);
+      URL.revokeObjectURL(ou);
+      const fr=new FileReader();
+      fr.onload=e=>res(e.target.result);
+      fr.onerror=()=>res(null);
+      fr.readAsDataURL(file);
+    };
     img.src=ou;
   });
 }
@@ -865,46 +900,63 @@ async function syncToFirebase(obj){
 
 // ══ MINI LOADER ══
 function showMiniLoader(txt){
-  let el=document.getElementById('miniLoader');
-  if(!el){
-    el=document.createElement('div');
-    el.id='miniLoader';
-    el.style.cssText='position:fixed;top:70px;right:20px;background:var(--p);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;z-index:8000;display:flex;align-items:center;gap:9px;box-shadow:0 4px 16px rgba(7,30,73,.25)';
-    el.innerHTML='<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;flex-shrink:0"></div><span id="miniLoaderTxt"></span>';
-    document.body.appendChild(el);
-  }
-  document.getElementById('miniLoaderTxt').textContent=txt;
-  el.style.display='flex';
+  try{
+    let el=document.getElementById('miniLoader');
+    if(!el){
+      el=document.createElement('div');
+      el.id='miniLoader';
+      el.style.cssText='position:fixed;top:70px;right:20px;background:var(--p);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;z-index:8000;display:flex;align-items:center;gap:9px;box-shadow:0 4px 16px rgba(7,30,73,.25)';
+      el.innerHTML='<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;flex-shrink:0"></div><span id="miniLoaderTxt">—</span>';
+      document.body.appendChild(el);
+    }
+    const txtEl=document.getElementById('miniLoaderTxt');
+    if(txtEl) txtEl.textContent=txt;
+    el.style.display='flex';
+  }catch(e){console.warn('miniLoader:',e)}
 }
 function hideMiniLoader(){
-  const el=document.getElementById('miniLoader');
-  if(el) el.style.display='none';
+  try{
+    const el=document.getElementById('miniLoader');
+    if(el) el.style.display='none';
+  }catch{}
 }
 
 // ══ DASHBOARD ══
+function setText(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
+
 async function renderDashboard(){
   const docs=await fetchDocs();
   const now=new Date();const tm=now.toISOString().substring(0,7);
-  const fv=document.getElementById('fMonth').value||tm;
-  document.getElementById('sTotal').textContent=docs.length;
-  document.getElementById('sBulan').textContent=docs.filter(d=>ym(d.tanggal)===tm).length;
-  document.getElementById('sBulanLbl').textContent=BULAN[now.getMonth()]+' '+now.getFullYear();
-  document.getElementById('sFoto').textContent=docs.reduce((s,d)=>s+(d.schools||[]).reduce((ss,sc)=>ss+(sc.photos||[]).filter(Boolean).length,0),0);
-  document.getElementById('sCetak').textContent=docs.filter(d=>d.printed).length;
-  const fil=docs.filter(d=>ym(d.tanggal)===fv);
+  const fv=(document.getElementById('fMonth')?.value)||tm;
+
+  setText('sTotal', docs.length);
+  setText('sBulan', docs.filter(d=>ym(d.tanggal)===tm).length);
+  setText('sBulanLbl', BULAN[now.getMonth()]+' '+now.getFullYear());
+  setText('sFoto', docs.reduce((s,d)=>s+(d.schools||[]).reduce((ss,sc)=>ss+(sc.photos||[]).filter(Boolean).length,0),0));
+  setText('sCetak', docs.filter(d=>d.printed).length);
+
   const tb=document.getElementById('dbTbody');
-  if(!fil.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">Tidak ada data periode ini</div></td></tr>';return}
+  if(!tb) return;
+
+  const fil=docs.filter(d=>ym(d.tanggal)===fv);
+  if(!fil.length){
+    tb.innerHTML='<tr><td colspan="6"><div class="empty">Tidak ada data periode ini</div></td></tr>';
+    return;
+  }
   tb.innerHTML=fil.map(d=>{
     const fc=(d.schools||[]).reduce((s,x)=>s+(x.photos||[]).filter(Boolean).length,0);
+    const docId=d.id;
     return`<tr>
-      <td>${d.tanggal}</td><td>${d.hari||getHari(d.tanggal)}</td>
-      <td>${d.keterangan||'—'}</td><td>${fc} foto</td>
+      <td>${d.tanggal}</td>
+      <td>${d.hari||getHari(d.tanggal)}</td>
+      <td>${d.keterangan||'—'}</td>
+      <td>${fc} foto</td>
       <td>${d.printed?'<span class="badge bb">✓ Cetak</span>':'<span class="badge bx">Belum</span>'}</td>
       <td style="text-align:center">
         <div class="flex gap2" style="justify-content:center">
-          <button class="btn sm bp" onclick="openPrint('${d.id}')">🖨️</button>
-          <button class="btn sm bq" onclick="openEdit2('${d.id}')">✏️</button>
-          <button class="btn sm brd" onclick="openDel('${d.id}')">🗑️</button>
+          <button class="btn sm bp" onclick="openPrint('${docId}')">🖨️</button>
+          <button class="btn sm bq" onclick="openEdit2('${docId}')">✏️</button>
+          <button class="btn sm brd" onclick="openDel('${docId}')">🗑️</button>
         </div>
       </td>
     </tr>`;
