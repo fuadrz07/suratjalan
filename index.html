@@ -665,20 +665,20 @@ function trigFile(si,sl){document.getElementById(`fi_${si}_${sl}`).click()}
 
 function onFile(e,si,sl){
   const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    const jam=nowJam(),kel=SCHOOLS[si].kel;
-    document.getElementById(`psj_${si}_${sl}`).value=jam;
-    document.getElementById(`psk_${si}_${sl}`).value=kel;
-    const im=document.getElementById(`im_${si}_${sl}`);
-    im.src=ev.target.result;im.style.display='block';
-    document.getElementById(`sl_${si}_${sl}`).classList.add('has');
-    document.getElementById(`ps_${si}_${sl}`).classList.remove('hidden');
-    const tgl=document.getElementById('inTgl').value||todayStr();
-    pData[si][sl]={file:f,url:ev.target.result,tgl,jam,kel};
-    updateOv(si,sl);updCount(si);
-  };
-  r.readAsDataURL(f);
+  const jam=nowJam(),kel=SCHOOLS[si].kel;
+  // Pakai ObjectURL — instan, tanpa FileReader, tanpa base64
+  const objUrl=URL.createObjectURL(f);
+  document.getElementById(`psj_${si}_${sl}`).value=jam;
+  document.getElementById(`psk_${si}_${sl}`).value=kel;
+  const im=document.getElementById(`im_${si}_${sl}`);
+  im.src=objUrl; im.style.display='block';
+  document.getElementById(`sl_${si}_${sl}`).classList.add('has');
+  document.getElementById(`ps_${si}_${sl}`).classList.remove('hidden');
+  const tgl=document.getElementById('inTgl').value||todayStr();
+  // Hapus objectURL lama jika ada
+  if(pData[si][sl]?.objUrl) URL.revokeObjectURL(pData[si][sl].objUrl);
+  pData[si][sl]={file:f, objUrl, tgl, jam, kel};
+  updateOv(si,sl); updCount(si);
 }
 
 function updateOv(si,sl){
@@ -713,10 +713,9 @@ function resetForm(){
 }
 
 // ══════════════════════════════════════════════
-//  INDEXEDDB — simpan foto lokal, instan, unlimited size
+//  INDEXEDDB — simpan File blob langsung, tanpa kompresi Canvas
 // ══════════════════════════════════════════════
-const IDB_NAME='sppg_photos';
-const IDB_VER=1;
+const IDB_NAME='sppg_photos', IDB_VER=1;
 let _idb=null;
 
 function openIDB(){
@@ -732,7 +731,6 @@ function openIDB(){
     r.onerror=()=>rej(r.error);
   });
 }
-
 async function idbSet(key,blob){
   const db=await openIDB();
   return new Promise((res,rej)=>{
@@ -742,58 +740,27 @@ async function idbSet(key,blob){
     tx.onerror=()=>rej(tx.error);
   });
 }
-
 async function idbGet(key){
   const db=await openIDB();
-  return new Promise((res,rej)=>{
+  return new Promise((res)=>{
     const tx=db.transaction('photos','readonly');
     const r=tx.objectStore('photos').get(key);
     r.onsuccess=()=>res(r.result?.blob||null);
-    r.onerror=()=>rej(r.error);
+    r.onerror=()=>res(null);
   });
 }
-
 async function idbDel(key){
   const db=await openIDB();
   return new Promise(res=>{
     const tx=db.transaction('photos','readwrite');
     tx.objectStore('photos').delete(key);
     tx.oncomplete=()=>res();
+    tx.onerror=()=>res();
   });
 }
 
-// Kompres foto ringan (max 600px, 0.65 quality) → ~30-50KB
-function compressImage(file,maxPx=600,quality=0.65){
-  return new Promise(res=>{
-    const img=new Image();
-    const ou=URL.createObjectURL(file);
-    img.onload=()=>{
-      URL.revokeObjectURL(ou);
-      let w=img.width,h=img.height;
-      if(w>maxPx||h>maxPx){
-        if(w>h){h=Math.round(h*maxPx/w);w=maxPx}
-        else{w=Math.round(w*maxPx/h);h=maxPx}
-      }
-      const cv=document.createElement('canvas');
-      cv.width=w;cv.height=h;
-      cv.getContext('2d').drawImage(img,0,0,w,h);
-      cv.toBlob(b=>res(b),'image/jpeg',quality);
-    };
-    img.onerror=()=>{URL.revokeObjectURL(ou);res(null)};
-    img.src=ou;
-  });
-}
-
-// Blob → ObjectURL (untuk tampil di PDF/print)
-async function getPhotoUrl(docId,si,sl){
-  try{
-    const blob=await idbGet(`${docId}_${si}_${sl}`);
-    if(blob)return URL.createObjectURL(blob);
-  }catch{}
-  return null;
-}
-
-// ══ SAVE — INSTAN: kompres → IndexedDB → Firestore (metadata only) ══
+// ══ SAVE — BENAR-BENAR INSTAN ══
+// Alur: File → IDB (langsung, tanpa compress) → Firestore metadata → selesai
 async function saveDoc(){
   const tgl=document.getElementById('inTgl').value;
   if(!tgl){toast('Pilih tanggal!',true);return}
@@ -803,84 +770,82 @@ async function saveDoc(){
   const btn=document.getElementById('btnSave');
   btn.disabled=true;
   btn.innerHTML='<span class="spin"></span> Menyimpan...';
-  showMiniLoader('Menyimpan...');
 
   try{
     const ket=document.getElementById('inKet').value;
-    const docId=(window._fbOk?'fb_':'local_')+Date.now();
+    // Buat ID dokumen dulu
+    const tempId='doc_'+Date.now();
 
-    // Kumpulkan metadata sekolah (TANPA foto — foto ke IndexedDB)
-    const schools=SCHOOLS.map((sch,si)=>{
-      const photos=[0,1].map(sl=>{
-        const p=pData[si][sl];
-        if(!p)return null;
-        return{
-          // Simpan metadata saja, foto disimpan di IndexedDB
-          tgl:p.tgl||tgl, jam:p.jam||'',
-          kel:p.kel||sch.kel, label:SLOT_LBL[sl],
-          idbKey:`${docId}_${si}_${sl}` // key untuk ambil dari IndexedDB
-        };
-      });
-      return{name:sch.name,photos};
-    });
-
-    // Simpan foto ke IndexedDB (lokal, sangat cepat)
-    const compressionJobs=[];
+    // LANGKAH 1: Simpan File ke IndexedDB — tidak perlu kompresi, sangat cepat
     for(let si=0;si<9;si++){
       for(let sl=0;sl<2;sl++){
         const p=pData[si][sl];
-        if(!p)continue;
-        compressionJobs.push((async()=>{
-          const blob=await compressImage(p.file,600,0.65)||new Blob([await p.file.arrayBuffer()]);
-          await idbSet(`${docId}_${si}_${sl}`,blob);
-        })());
+        if(!p?.file) continue;
+        // Langsung simpan File sebagai blob, tanpa canvas, tanpa base64
+        await idbSet(`${tempId}_${si}_${sl}`, p.file);
       }
     }
-    await Promise.all(compressionJobs);
 
-    // Simpan metadata ke Firestore (sangat kecil, instan)
+    // LANGKAH 2: Buat objek metadata (TANPA foto, sangat kecil)
+    const schools=SCHOOLS.map((sch,si)=>({
+      name:sch.name,
+      photos:[0,1].map(sl=>{
+        const p=pData[si][sl];
+        if(!p?.file) return null;
+        return{
+          idbKey:`${tempId}_${si}_${sl}`,
+          tgl:p.tgl||tgl, jam:p.jam||'',
+          kel:p.kel||sch.kel, label:SLOT_LBL[sl]
+        };
+      })
+    }));
+
     const obj={
-      id:docId, tanggal:tgl, hari:getHari(tgl),
-      keterangan:ket, schools, printed:false,
+      tanggal:tgl, hari:getHari(tgl), keterangan:ket,
+      schools, printed:false,
       createdAt:new Date().toISOString()
     };
 
+    // LANGKAH 3: Simpan metadata ke Firestore (< 2KB, instan)
     if(window._fbOk&&window._db){
       const{collection,addDoc}=window._fb;
       const r=await addDoc(collection(window._db,'surat_jalan'),obj);
-      obj.id=r.id;
-      // Update idbKey dengan id Firestore yang benar
-      obj.schools.forEach((sch,si)=>{
-        (sch.photos||[]).forEach((p,sl)=>{
-          if(p){
-            const oldKey=`${docId}_${si}_${sl}`;
-            const newKey=`${r.id}_${si}_${sl}`;
-            if(oldKey!==newKey){
-              idbGet(oldKey).then(blob=>{if(blob){idbSet(newKey,blob);idbDel(oldKey)}});
-              p.idbKey=newKey;
+      // Jika perlu, rename idbKey sesuai id Firestore (opsional, di background)
+      const fbId=r.id;
+      if(fbId!==tempId){
+        // Rename keys di background, tidak block UI
+        setTimeout(async()=>{
+          for(let si=0;si<9;si++){
+            for(let sl=0;sl<2;sl++){
+              const oldKey=`${tempId}_${si}_${sl}`;
+              const newKey=`${fbId}_${si}_${sl}`;
+              try{
+                const blob=await idbGet(oldKey);
+                if(blob){ await idbSet(newKey,blob); await idbDel(oldKey); }
+              }catch{}
             }
           }
-        });
-      });
-      // Update Firestore dengan idbKey yang benar
-      try{
-        const{doc,updateDoc}=window._fb;
-        await updateDoc(doc(window._db,'surat_jalan',r.id),{schools:obj.schools});
-      }catch{}
+          // Update idbKey di Firestore
+          try{
+            const{doc,updateDoc}=window._fb;
+            const updSchools=schools.map(s=>({...s,photos:(s.photos||[]).map(p=>p?{...p,idbKey:p.idbKey.replace(tempId,fbId)}:null)}));
+            await updateDoc(doc(window._db,'surat_jalan',fbId),{schools:updSchools});
+          }catch{}
+        }, 100);
+      }
     } else {
-      const d=getLocal();d.unshift(obj);setLocal(d);
+      obj.id=tempId;
+      const d=getLocal(); d.unshift(obj); setLocal(d);
     }
 
-    hideMiniLoader();
     toast('✓ Dokumentasi disimpan!');
     toggleInput();
     resetForm();
     renderDashboard();
 
   }catch(e){
-    hideMiniLoader();
-    toast('Gagal: '+e.message,true);
-    console.error(e);
+    toast('Gagal: '+e.message, true);
+    console.error('saveDoc error:',e);
   }finally{
     btn.disabled=false;
     btn.innerHTML='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi';
@@ -902,7 +867,7 @@ function showMiniLoader(txt){
 }
 function hideMiniLoader(){
   const el=document.getElementById('miniLoader');
-  if(el)el.style.display='none';
+  if(el) el.style.display='none';
 }
 
 // ══ DASHBOARD ══
@@ -997,29 +962,29 @@ async function confirmEdit(){
   closeMo('moEdit');renderDashboard();renderDaftar();
 }
 
-// ══ BUILD A4 — async, ambil foto dari IndexedDB ══
+// ══ BUILD A4 — ambil foto dari IDB ══
 async function buildA4Pages(d){
   const allSch=d.schools||[];
-  const perPage=5;const pages=[];
-  for(let i=0;i<allSch.length;i+=perPage)pages.push(allSch.slice(i,i+perPage));
+  const perPage=5; const pages=[];
+  for(let i=0;i<allSch.length;i+=perPage) pages.push(allSch.slice(i,i+perPage));
 
-  // Resolve semua foto URLs dulu (dari IndexedDB atau url langsung)
-  const resolvedPages=await Promise.all(pages.map(async(chunk)=>{
-    return Promise.all(chunk.map(async(s,chunkIdx)=>{
-      const si=allSch.indexOf(s);
-      const photos=await Promise.all((s.photos||[]).map(async(p,sl)=>{
-        if(!p)return null;
-        let imgUrl=p.url||null;
-        // Coba ambil dari IndexedDB dulu (lebih besar/lebih bagus)
+  const resolvedPages=await Promise.all(pages.map(async chunk=>{
+    return Promise.all(chunk.map(async s=>{
+      const resolvedPhotos=await Promise.all((s.photos||[]).map(async(p)=>{
+        if(!p) return null;
+        let imgUrl=null;
+        // Coba dari IndexedDB
         if(p.idbKey){
           try{
             const blob=await idbGet(p.idbKey);
-            if(blob)imgUrl=URL.createObjectURL(blob);
+            if(blob) imgUrl=URL.createObjectURL(blob);
           }catch{}
         }
+        // Fallback ke url langsung jika ada
+        if(!imgUrl && p.url) imgUrl=p.url;
         return imgUrl?{...p,imgUrl}:null;
       }));
-      return{...s,photos};
+      return{...s, photos:resolvedPhotos};
     }));
   }));
 
@@ -1032,7 +997,7 @@ async function buildA4Pages(d){
       </div>
       ${chunk.map(s=>{
         const photos=(s.photos||[]).filter(p=>p&&p.imgUrl);
-        if(!photos.length)return'';
+        if(!photos.length) return '';
         const info=SCHOOLS.find(x=>x.name===s.name)||{};
         const cols=photos.map(p=>{
           const pd=new Date((p.tgl||d.tanggal)+'T00:00:00');
