@@ -474,18 +474,8 @@ input[type=month] {
   border-radius: 3px; font-family: system-ui, sans-serif;
 }
 
-/* Kop Surat */
-.kop-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
-.kop-logo {
-  width: 56px; height: 56px; flex-shrink: 0;
-  background: var(--navy); border-radius: 50%;
-  border: 3px solid var(--gold);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-}
-.kop-logo .kl1 { font-size: 11px; font-weight: 900; color: #fff; line-height: 1.1; text-align: center; }
-.kop-logo .kl2 { font-size: 7px; color: var(--gold); font-weight: 700; }
-.kop-text { flex: 1; text-align: center; }
+/* Kop Surat - text only, no logo */
+.kop-text { text-align: center; margin-bottom: 6px; }
 .kop-text .kt1 { font-size: 9.5px; font-weight: 600; color: #555; }
 .kop-text .kt2 { font-size: 10.5px; font-weight: 700; color: #222; margin-top: 1px; }
 .kop-text .kt3 {
@@ -1589,17 +1579,11 @@ async function confirmEdit() {
 // ════════════════════════════════════════════════════
 function buildKopSurat(d) {
   return `
-  <div class="kop-wrap">
-    <div class="kop-logo">
-      <div class="kl1">SPPG</div>
-      <div class="kl2">MULIA 2</div>
-    </div>
-    <div class="kop-text">
-      <div class="kt1">PEMERINTAH KOTA BANDA ACEH</div>
-      <div class="kt2">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
-      <div class="kt3">SPPG KUTA ALAM MULIA 2</div>
-      <div class="kt4">Kuta Alam, Banda Aceh &nbsp;·&nbsp; Kode Pos 23125</div>
-    </div>
+  <div style="text-align:center;margin-bottom:6px">
+    <div class="kt1">PEMERINTAH KOTA BANDA ACEH</div>
+    <div class="kt2">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+    <div class="kt3">SPPG KUTA ALAM MULIA 2</div>
+    <div class="kt4">Kuta Alam, Banda Aceh &nbsp;·&nbsp; Kode Pos 23125</div>
   </div>
   <div class="kop-divider"></div>
   <div class="kop-subtitle">
@@ -1628,10 +1612,19 @@ function buildA4Pages(d) {
       }
       <div class="a4-schools">
         ${chunk.map(school => {
-          const photos = (school.photos || []).filter(p => p && p.url);
-          if (!photos.length) return '';
+          const photos = school.photos || [null, null];
+          // Pastikan selalu ada tepat 2 slot (null jika tidak ada foto)
+          const slot0 = photos[0] && photos[0].url ? photos[0] : null;
+          const slot1 = photos[1] && photos[1].url ? photos[1] : null;
+          if (!slot0 && !slot1) return '';
+
           const info = SCHOOLS.find(s => s.name === school.name) || {};
-          const photoCols = photos.map(p => {
+
+          const renderSlot = (p) => {
+            if (!p) {
+              // Slot kosong — kotak putih seukuran foto
+              return `<div class="a4-photo-box" style="background:#f8f9fb;border:1px solid #e0e8f0"></div>`;
+            }
             const pd = new Date((p.tgl || d.tanggal) + 'T00:00:00');
             const dd = pd.getDate().toString().padStart(2,'0');
             const mm = (pd.getMonth()+1).toString().padStart(2,'0');
@@ -1645,11 +1638,14 @@ function buildA4Pages(d) {
                 <span class="l" style="white-space:pre-line">${tsLine2}</span>
               </div>
             </div>`;
-          }).join('');
-          const gridCols = photos.length === 1 ? '1fr' : '1fr 1fr';
+          };
+
           return `<div class="a4-row">
             <div class="a4-school-name">${school.name}</div>
-            <div class="a4-photos-wrap" style="grid-template-columns:${gridCols}">${photoCols}</div>
+            <div class="a4-photos-wrap" style="grid-template-columns:1fr 1fr">
+              ${renderSlot(slot0)}
+              ${renderSlot(slot1)}
+            </div>
           </div>`;
         }).join('')}
       </div>
@@ -1701,15 +1697,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#ddd;padding:14px}
     page-break-after:always!important;break-after:page!important}
 }
 .a4-page{width:794px;background:#fff;padding:28px 36px;margin:0 auto 14px;box-shadow:0 4px 20px rgba(0,0,0,.15);border-radius:3px;font-family:'Segoe UI',system-ui,sans-serif}
-.kop-wrap{display:flex;align-items:center;gap:16px;margin-bottom:6px}
-.kop-logo{width:56px;height:56px;flex-shrink:0;background:#071e49;border-radius:50%;border:3px solid #e8a020;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.kl1{font-size:11px;font-weight:900;color:#fff;line-height:1.1;text-align:center}
-.kl2{font-size:7px;color:#e8a020;font-weight:700}
-.kop-text{flex:1;text-align:center}
-.kt1{font-size:9.5px;font-weight:600;color:#555}
-.kt2{font-size:10.5px;font-weight:700;color:#222;margin-top:1px}
-.kt3{font-size:15px;font-weight:900;color:#071e49;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.kt4{font-size:8px;color:#777;margin-top:2px}
+.kt1{font-size:9.5px;font-weight:600;color:#555;text-align:center}
+.kt2{font-size:10.5px;font-weight:700;color:#222;margin-top:1px;text-align:center}
+.kt3{font-size:15px;font-weight:900;color:#071e49;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;text-align:center}
+.kt4{font-size:8px;color:#777;margin-top:2px;text-align:center}
 .kop-divider{height:3px;background:#071e49;margin:7px 0 2px}
 .kop-divider::after{content:'';display:block;height:1px;background:#e8a020;margin-top:2px}
 .kop-subtitle{text-align:center;padding:7px 0 9px;border-bottom:1px dashed #c8d8ee}
@@ -1722,7 +1713,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#ddd;padding:14px}
 .a4-row{display:flex;align-items:stretch;gap:7px;padding-bottom:7px;border-bottom:1px solid #eaeeea}
 .a4-row:last-child{border-bottom:none;padding-bottom:0}
 .a4-school-name{width:98px;flex-shrink:0;display:flex;align-items:center;font-size:7.5px;font-weight:800;color:#071e49;padding:4px 6px;background:#dce8f8;border-radius:5px;border-left:3px solid #071e49;line-height:1.35}
-.a4-photos-wrap{flex:1;display:grid;gap:6px}
+.a4-photos-wrap{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .a4-photo-box{position:relative;aspect-ratio:4/3;border-radius:5px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee}
 .a4-photo-box img{width:100%;height:100%;object-fit:cover;display:block}
 .a4-ts{position:absolute;top:4px;right:5px;text-align:right;font-family:'Courier New',Courier,monospace;line-height:1.4;pointer-events:none}
