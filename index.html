@@ -2,1218 +2,1654 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SPPG Kuta Alam Mulia 2</title>
-
-<script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,collection,addDoc,getDocs,doc,updateDoc,deleteDoc,query,orderBy,where}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import{getStorage,ref,uploadBytes,getDownloadURL}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-const FB={
-  apiKey:"AIzaSyCnPoaPiUeG2ufGHd7ErO2sS8x4kdp8Fqo",
-  authDomain:"surat-jalan-af1a8.firebaseapp.com",
-  projectId:"surat-jalan-af1a8",
-  storageBucket:"surat-jalan-af1a8.firebasestorage.app",
-  messagingSenderId:"392249849486",
-  appId:"1:392249849486:web:78bc2718a44bfd6de83bdf"
-};
-try{
-  const app=initializeApp(FB,'sppg');
-  window._db=getFirestore(app);
-  window._st=getStorage(app);
-  window._fb={collection,addDoc,getDocs,doc,updateDoc,deleteDoc,query,orderBy,where,ref,uploadBytes,getDownloadURL};
-  window._fbOk=true;
-}catch(e){window._fbOk=false;console.warn('FB:',e.message)}
-</script>
-
 <style>
-/* ══ PALETTE ══
-   Primary   : #071e49  (navy dark)
-   Secondary : #0f3575  (navy mid)
-   Accent    : #1a5fb4  (blue)
-   Light     : #dce8f8  (blue pale)
-   Gold      : #e8a020  (amber accent)
-   Red       : #d63031
-   BG        : #f0f4fb
-*/
-:root{
-  --p:#071e49;
-  --p2:#0f3575;
-  --p3:#1a5fb4;
-  --p-lt:#dce8f8;
-  --p-ltr:#edf3fc;
-  --gold:#e8a020;
-  --gold-lt:#fef3dc;
-  --bg:#f0f4fb;
-  --card:#ffffff;
-  --text:#0d1b35;
-  --muted:#5a6d8a;
-  --border:#c8d8ee;
-  --red:#d63031;
-  --red-lt:#fdecea;
-  --shadow:0 2px 16px rgba(7,30,73,.10);
-  --radius:14px;
-  --sb:240px; /* sidebar width */
-  --bn:64px;  /* bottom nav height */
+/* =========================================================
+   VARIABLES
+   ========================================================= */
+:root {
+  --navy:    #071e49;
+  --navy2:   #0f3575;
+  --blue:    #1a5fb4;
+  --lt:      #dce8f8;
+  --ltr:     #edf3fc;
+  --gold:    #e8a020;
+  --red:     #d63031;
+  --bg:      #f0f4fb;
+  --card:    #ffffff;
+  --text:    #0d1b35;
+  --muted:   #5a6d8a;
+  --border:  #c8d8ee;
+  --r:       12px;
+  --sh:      0 2px 14px rgba(7,30,73,.09);
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-tap-highlight-color:transparent}
-body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
-/* ══ SIDEBAR (desktop) ══ */
-#sidebar{
-  position:fixed;top:0;left:0;height:100vh;width:var(--sb);
-  background:linear-gradient(175deg,var(--p) 0%,var(--p2) 100%);
-  display:flex;flex-direction:column;z-index:200;
-  box-shadow:4px 0 24px rgba(7,30,73,.22);
-  transition:transform .3s;
+/* =========================================================
+   RESET
+   ========================================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
 }
-.sb-logo{padding:28px 20px 18px;border-bottom:1px solid rgba(255,255,255,.12)}
-.sb-logo .sb-icon{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
-.sb-logo h1{font-size:15px;font-weight:800;color:#fff;line-height:1.4;font-family:Georgia,serif}
-.sb-logo span{display:block;font-size:10.5px;color:rgba(255,255,255,.5);margin-top:3px}
-.sb-nav{padding:16px 10px;flex:1;overflow-y:auto}
-.nav-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;color:rgba(255,255,255,.68);font-size:13.5px;font-weight:500;cursor:pointer;transition:all .18s;margin-bottom:4px;border:none;background:none;width:100%;text-align:left}
-.nav-btn:hover{background:rgba(255,255,255,.1);color:#fff}
-.nav-btn.active{background:rgba(255,255,255,.18);color:#fff;font-weight:700}
-.nav-btn svg{flex-shrink:0;opacity:.8}
-.nav-btn.active svg{opacity:1}
-.sb-foot{padding:14px 20px;border-top:1px solid rgba(255,255,255,.1);font-size:10.5px;color:rgba(255,255,255,.38);display:flex;align-items:center;gap:8px}
-.fb-dot{width:7px;height:7px;border-radius:50%;background:#e8a020;flex-shrink:0;transition:background .4s}
-.fb-dot.ok{background:#00d084}
 
-/* ══ MAIN ══ */
-#main{margin-left:var(--sb);min-height:100vh;display:flex;flex-direction:column}
-
-/* ══ TOPBAR ══ */
-.topbar{
-  background:var(--card);border-bottom:1px solid var(--border);
-  padding:14px 28px;display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:100;
-  box-shadow:0 1px 8px rgba(7,30,73,.06);
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+#sidebar {
+  position: fixed; top: 0; left: 0;
+  width: 230px; height: 100vh;
+  background: linear-gradient(170deg, var(--navy) 0%, var(--navy2) 100%);
+  display: flex; flex-direction: column;
+  z-index: 300;
+  box-shadow: 3px 0 20px rgba(7,30,73,.2);
+  transition: transform .28s ease;
 }
-.topbar-left{display:flex;align-items:center;gap:12px}
-.hamburger{display:none;width:36px;height:36px;border:none;background:var(--p-lt);border-radius:9px;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px}
-.hamburger span{width:18px;height:2px;background:var(--p);border-radius:2px;display:block}
-.topbar h2{font-size:17px;font-weight:800;color:var(--text)}
-.topbar-date{font-size:12px;color:var(--muted);background:var(--p-ltr);padding:5px 12px;border-radius:20px}
-
-/* ══ PAGES ══ */
-.page{display:none;padding:24px 28px;flex:1}
-.page.active{display:block}
-
-/* ══ CARDS ══ */
-.card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow)}
-.card-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
-.card-hd h3{font-size:14.5px;font-weight:700;color:var(--text)}
-.card-bd{padding:20px}
-
-/* ══ STATS ══ */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-.stat{
-  background:var(--card);border-radius:var(--radius);border:1px solid var(--border);
-  padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+.sb-top {
+  padding: 26px 20px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
 }
-.stat::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--p3)}
-.stat .lbl{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
-.stat .val{font-size:26px;font-weight:800;color:var(--p)}
-.stat .sub{font-size:11px;color:var(--muted);margin-top:3px}
-
-/* ══ BADGES ══ */
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
-.bb{background:var(--p-lt);color:var(--p)}
-.bo{background:var(--gold-lt);color:var(--gold)}
-.bx{background:#f0f2f5;color:#666}
-.br2{background:var(--red-lt);color:var(--red)}
-
-/* ══ BUTTONS ══ */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .16s;font-family:inherit;white-space:nowrap}
-.bp{background:var(--p);color:#fff}.bp:hover{background:var(--p2);transform:translateY(-1px)}
-.bp2{background:var(--p3);color:#fff}.bp2:hover{background:var(--p2)}
-.bq{background:transparent;color:var(--p);border:1.5px solid var(--p)}.bq:hover{background:var(--p-lt)}
-.bg2{background:var(--gold);color:#fff}.bg2:hover{filter:brightness(1.08)}
-.brd{background:var(--red);color:#fff}.brd:hover{filter:brightness(1.08)}
-.sm{padding:5px 12px;font-size:12px;border-radius:7px}
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
-
-/* ══ TABLE ══ */
-.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:580px}
-.tbl th{background:var(--p-ltr);color:var(--p);padding:10px 14px;text-align:left;font-weight:700;font-size:11.5px;border-bottom:2px solid var(--border)}
-.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:var(--p-ltr)}
-
-/* ══ FORM ══ */
-.fg{margin-bottom:16px}
-.fg label{display:block;font-size:12.5px;font-weight:700;margin-bottom:5px;color:var(--text)}
-.fc{width:100%;padding:9px 13px;border-radius:9px;border:1.5px solid var(--border);font-size:14px;font-family:inherit;color:var(--text);background:#fff;transition:border-color .15s}
-.fc:focus{outline:none;border-color:var(--p3);box-shadow:0 0 0 3px rgba(26,95,180,.12)}
-input[type=month]{padding:8px 12px;border-radius:9px;border:1.5px solid var(--border);font-size:13px;font-family:inherit;cursor:pointer;background:#fff}
-
-/* ══ SCHOOL SECTIONS ══ */
-.sch-sec{background:var(--card);border-radius:var(--radius);border:1.5px solid var(--border);margin-bottom:12px;overflow:hidden;box-shadow:0 1px 6px rgba(7,30,73,.06)}
-.sch-hd{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background .15s;gap:10px}
-.sch-hd:hover{background:var(--p-ltr)}
-.sch-hd h4{font-size:13px;font-weight:700;color:var(--text)}
-.sch-meta{font-size:10px;color:var(--muted);margin-top:2px}
-.sch-bd{padding:14px 16px;border-top:1px solid var(--border);display:none;background:#fafcff}
-.sch-bd.open{display:block}
-.chev{transition:transform .2s;flex-shrink:0;color:var(--muted)}.chev.open{transform:rotate(180deg)}
-.pcnt{display:inline-flex;font-size:10px;background:var(--p-lt);color:var(--p);padding:2px 8px;border-radius:12px;font-weight:700}
-
-/* ══ PHOTO SLOTS — 2 per school ══ */
-.slots-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.slot-wrap{display:flex;flex-direction:column;gap:6px}
-.slot-label-top{font-size:11px;font-weight:700;color:var(--p);margin-bottom:2px;display:flex;align-items:center;gap:5px}
-.slot{
-  border:2px dashed var(--border);border-radius:10px;aspect-ratio:4/3;
-  overflow:hidden;position:relative;background:#f6f9fe;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .18s;
+.sb-top h1 {
+  font-size: 15px; font-weight: 800;
+  color: #fff; line-height: 1.4;
+  font-family: Georgia, serif;
 }
-.slot:hover{border-color:var(--p3);background:var(--p-ltr)}
-.slot input[type=file]{display:none}
-.slot img{width:100%;height:100%;object-fit:cover}
-.slot-ph{display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none}
-.slot-ph svg{color:var(--p3);opacity:.45}
-.slot-ph span{font-size:11.5px;color:var(--muted)}
-.slot-rmv{position:absolute;top:5px;left:5px;background:rgba(214,48,49,.9);color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:3;line-height:1}
-.slot.has .slot-rmv{display:flex}
-.slot.has .slot-ph{display:none}
+.sb-top p { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 3px; }
+
+.sb-nav { padding: 14px 8px; flex: 1; }
+.nav-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 11px 14px;
+  border-radius: 10px; border: none;
+  background: none; color: rgba(255,255,255,.6);
+  font-size: 13.5px; font-weight: 500;
+  cursor: pointer; text-align: left;
+  transition: all .2s; margin-bottom: 3px;
+  font-family: inherit;
+}
+.nav-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+.nav-btn.active { background: rgba(255,255,255,.18); color: #fff; font-weight: 700; }
+.nav-btn svg { flex-shrink: 0; opacity: .7; }
+.nav-btn.active svg { opacity: 1; }
+
+.sb-foot {
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255,255,255,.1);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: rgba(255,255,255,.35);
+}
+.fb-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--gold); flex-shrink: 0;
+  transition: background .5s;
+}
+.fb-dot.ok { background: #00d084; }
+
+/* =========================================================
+   OVERLAY (mobile)
+   ========================================================= */
+#overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(7,30,73,.4); z-index: 200;
+}
+#overlay.show { display: block; }
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
+#main { margin-left: 230px; min-height: 100vh; }
+
+/* TOPBAR */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 1px 8px rgba(7,30,73,.06);
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar h2 { font-size: 17px; font-weight: 800; color: var(--text); }
+.topbar-date {
+  font-size: 12px; color: var(--muted);
+  background: var(--ltr); padding: 5px 13px; border-radius: 20px;
+}
+.ham-btn {
+  display: none;
+  width: 36px; height: 36px; border: none;
+  background: var(--lt); border-radius: 8px;
+  cursor: pointer; flex-direction: column;
+  align-items: center; justify-content: center; gap: 5px;
+}
+.ham-btn span { width: 17px; height: 2px; background: var(--navy); border-radius: 2px; display: block; }
+
+/* PAGES */
+.page { display: none; padding: 24px 28px; }
+.page.active { display: block; }
+
+/* =========================================================
+   STATS GRID
+   ========================================================= */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 22px;
+}
+.stat-card {
+  background: var(--card);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  padding: 18px 20px;
+  box-shadow: var(--sh);
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--blue);
+}
+.stat-card .s-lbl {
+  font-size: 11px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase;
+  letter-spacing: .4px; margin-bottom: 7px;
+}
+.stat-card .s-val { font-size: 28px; font-weight: 800; color: var(--navy); }
+.stat-card .s-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* =========================================================
+   CARD
+   ========================================================= */
+.card {
+  background: var(--card);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  box-shadow: var(--sh);
+  margin-bottom: 20px;
+}
+.card-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.card-header h3 { font-size: 14px; font-weight: 700; }
+.card-body { padding: 20px; }
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+.data-table th {
+  background: var(--ltr); color: var(--navy);
+  padding: 10px 14px; text-align: left;
+  font-size: 11.5px; font-weight: 700;
+  border-bottom: 2px solid var(--border);
+}
+.data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--ltr); }
+
+/* =========================================================
+   BADGES
+   ========================================================= */
+.badge { display: inline-flex; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.badge-blue { background: var(--lt); color: var(--navy); }
+.badge-gray { background: #f0f2f5; color: #666; }
+.badge-gold { background: #fff3dc; color: var(--gold); }
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 9px;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; border: none;
+  font-family: inherit; transition: all .15s;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--navy2); }
+.btn-outline { background: transparent; color: var(--navy); border: 1.5px solid var(--navy); }
+.btn-outline:hover { background: var(--lt); }
+.btn-gold { background: var(--gold); color: #fff; }
+.btn-gold:hover { filter: brightness(1.08); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-red:hover { filter: brightness(1.08); }
+.btn-sm { padding: 6px 13px; font-size: 12px; border-radius: 8px; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* =========================================================
+   FORM
+   ========================================================= */
+.form-input {
+  width: 100%; padding: 9px 13px;
+  border-radius: 9px; border: 1.5px solid var(--border);
+  font-size: 14px; font-family: inherit;
+  color: var(--text); background: #fff;
+  transition: border-color .15s;
+}
+.form-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,95,180,.1); }
+.form-label { display: block; font-size: 12.5px; font-weight: 700; margin-bottom: 5px; }
+input[type=month] {
+  padding: 8px 12px; border-radius: 9px;
+  border: 1.5px solid var(--border);
+  font-size: 13px; font-family: inherit;
+  cursor: pointer; background: #fff; color: var(--text);
+}
+
+/* =========================================================
+   INPUT SECTION (collapsible)
+   ========================================================= */
+#inputSection {
+  display: none;
+  background: var(--card);
+  border-radius: var(--r);
+  border: 1.5px solid var(--lt);
+  box-shadow: var(--sh);
+  margin-bottom: 22px; overflow: hidden;
+}
+#inputSection.show { display: block; }
+.input-header {
+  padding: 14px 20px;
+  background: linear-gradient(90deg, var(--ltr), #fff);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.input-header h3 { font-size: 14px; font-weight: 700; color: var(--navy); }
+
+/* =========================================================
+   SCHOOL SECTIONS
+   ========================================================= */
+.school-sec {
+  background: var(--card);
+  border-radius: var(--r);
+  border: 1.5px solid var(--border);
+  margin-bottom: 10px; overflow: hidden;
+  box-shadow: 0 1px 5px rgba(7,30,73,.05);
+}
+.school-head {
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+  transition: background .15s; gap: 10px;
+}
+.school-head:hover { background: var(--ltr); }
+.school-head h4 { font-size: 13px; font-weight: 700; }
+.school-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.school-body {
+  display: none; padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  background: #fafcff;
+}
+.school-body.show { display: block; }
+.chevron { transition: transform .2s; color: var(--muted); flex-shrink: 0; }
+.chevron.open { transform: rotate(180deg); }
+.photo-count {
+  font-size: 10px; background: var(--lt); color: var(--navy);
+  padding: 2px 8px; border-radius: 12px; font-weight: 700; flex-shrink: 0;
+}
+
+/* =========================================================
+   PHOTO SLOTS (2 per school)
+   ========================================================= */
+.slots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.slot-wrap { display: flex; flex-direction: column; gap: 5px; }
+.slot-label-txt { font-size: 11px; font-weight: 700; color: var(--navy); }
+
+.photo-slot {
+  border: 2px dashed var(--border);
+  border-radius: 9px; aspect-ratio: 4/3;
+  overflow: hidden; position: relative;
+  background: #f6f9fe;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; transition: all .18s;
+}
+.photo-slot:hover { border-color: var(--blue); background: var(--ltr); }
+.photo-slot input[type=file] { display: none; }
+.photo-slot img { width: 100%; height: 100%; object-fit: cover; }
+.slot-placeholder {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 5px; pointer-events: none;
+}
+.slot-placeholder svg { opacity: .35; color: var(--blue); }
+.slot-placeholder span { font-size: 11.5px; color: var(--muted); }
+.slot-remove {
+  position: absolute; top: 5px; left: 5px;
+  background: rgba(214,48,49,.9); color: #fff;
+  border: none; border-radius: 50%;
+  width: 24px; height: 24px; font-size: 14px;
+  cursor: pointer; display: none;
+  align-items: center; justify-content: center; z-index: 3;
+}
+.photo-slot.has-photo .slot-remove { display: flex; }
+.photo-slot.has-photo .slot-placeholder { display: none; }
 
 /* Timestamp overlay */
-.ts-overlay{position:absolute;top:5px;right:6px;text-align:right;display:none;pointer-events:none;font-family:'Courier New',Courier,monospace;line-height:1.4}
-.slot.has .ts-overlay{display:block}
-.ts-overlay .ts-date{display:block;font-size:9px;font-weight:400;color:#fff;text-shadow:1px 1px 3px rgba(0,0,0,.95);letter-spacing:.3px}
-.ts-overlay .ts-loc{display:block;font-size:7px;font-weight:400;color:#fff;text-shadow:1px 1px 3px rgba(0,0,0,.95);white-space:pre-line;letter-spacing:.2px}
-
-/* Photo settings */
-.photo-settings{background:var(--p-ltr);border:1px solid var(--border);border-radius:9px;padding:9px 11px}
-.photo-settings.hidden{display:none}
-.ps-title{font-size:10.5px;font-weight:700;color:var(--p);margin-bottom:6px}
-.ps-row{display:flex;gap:6px;align-items:center;margin-bottom:5px}
-.ps-row:last-child{margin-bottom:0}
-.ps-row label{font-size:10px;font-weight:600;color:var(--muted);min-width:36px}
-.ps-inp{flex:1;padding:4px 8px;border-radius:6px;border:1.5px solid var(--border);font-size:11px;font-family:inherit;background:#fff;color:var(--text)}
-.ps-inp:focus{outline:none;border-color:var(--p3)}
-
-/* ══ INPUT SECTION (collapsible in dashboard) ══ */
-#inputSection{background:var(--card);border-radius:var(--radius);border:1.5px solid var(--p-lt);box-shadow:var(--shadow);margin-bottom:22px;display:none;overflow:hidden}
-#inputSection.show{display:block}
-.input-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(90deg,var(--p-ltr),#fff);border-radius:var(--radius) var(--radius) 0 0}
-.input-hdr h3{font-size:14px;font-weight:700;color:var(--p)}
-.input-body{padding:20px}
-
-/* ══ TOAST ══ */
-#toast{position:fixed;bottom:max(24px,env(safe-area-inset-bottom,24px));right:20px;background:var(--p);color:#fff;padding:12px 20px;border-radius:10px;font-size:13.5px;font-weight:700;box-shadow:0 4px 20px rgba(7,30,73,.25);transform:translateY(80px);opacity:0;transition:all .28s;z-index:9999;max-width:calc(100vw - 40px)}
-#toast.show{transform:translateY(0);opacity:1}
-#toast.err{background:var(--red)}
-
-/* ══ LOADING ══ */
-#loader{position:fixed;inset:0;background:rgba(7,30,73,.18);display:none;align-items:center;justify-content:center;z-index:9000;backdrop-filter:blur(3px)}
-#loader.show{display:flex}
-.loader-box{background:#fff;border-radius:16px;padding:28px 36px;display:flex;flex-direction:column;align-items:center;gap:14px;box-shadow:0 8px 40px rgba(7,30,73,.2)}
-.loader-box p{font-size:14px;font-weight:600;color:var(--p)}
-.spin-lg{width:38px;height:38px;border:3.5px solid var(--p-lt);border-top-color:var(--p3);border-radius:50%;animation:sp .7s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-
-/* ══ MODALS ══ */
-.mo{position:fixed;inset:0;background:rgba(7,30,73,.4);display:none;align-items:flex-end;justify-content:center;z-index:500;padding:0;backdrop-filter:blur(2px)}
-.mo.open{display:flex}
-.mb{background:#fff;border-radius:20px 20px 0 0;padding:24px 24px max(24px,env(safe-area-inset-bottom,24px));width:100%;max-width:540px;box-shadow:0 -8px 40px rgba(7,30,73,.18);animation:slideUp .25s ease}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.mb-drag{width:40px;height:4px;background:#dde;border-radius:4px;margin:0 auto 18px}
-.mb h3{font-size:16px;font-weight:800;margin-bottom:12px;color:var(--p)}
-.m-act{display:flex;gap:9px;margin-top:18px;justify-content:flex-end}
-
-/* Print modal — full screen on mobile */
-#moPrint.mo{align-items:stretch;padding:0}
-#moPrint .mb{max-width:100%;border-radius:0;padding:0;max-height:100vh;display:flex;flex-direction:column}
-.pm-toolbar{padding:14px 18px;background:linear-gradient(90deg,var(--p),var(--p2));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;padding-top:max(14px,env(safe-area-inset-top,14px))}
-.pm-toolbar h3{color:#fff;font-size:14.5px;font-weight:800}
-.pm-actions{display:flex;gap:8px}
-.pm-body{flex:1;overflow-y:auto;padding:16px;background:#e4e8f0}
-
-/* ══ A4 PAGE ══ */
-.a4-page{width:794px;background:#fff;padding:26px 30px;margin:0 auto 14px;box-shadow:0 4px 24px rgba(0,0,0,.15);border-radius:3px;font-family:system-ui,sans-serif}
-.a4-hdr{text-align:center;margin-bottom:13px;padding-bottom:10px;border-bottom:2.5px solid #071e49}
-.a4-hdr .t1{font-size:14px;font-weight:800;color:#071e49;letter-spacing:.7px;text-transform:uppercase}
-.a4-hdr .t2{font-size:10.5px;font-weight:600;color:#333;margin-top:2px}
-.a4-hdr .t3{font-size:10px;color:#5a6d8a;margin-top:3px}
-.a4-sch-row{display:flex;align-items:stretch;gap:6px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #e8edf5}
-.a4-sch-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
-.a4-sch-label{width:105px;flex-shrink:0;display:flex;align-items:center;font-size:8px;font-weight:800;color:#071e49;padding:4px 6px;background:#dce8f8;border-radius:5px;border-left:3px solid #071e49;line-height:1.3}
-.a4-sch-photos{flex:1;display:grid;gap:5px}
-.a4-photo-box{position:relative;aspect-ratio:4/3;border-radius:5px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee}
-.a4-photo-box img{width:100%;height:100%;object-fit:cover;display:block}
-.a4-ts{position:absolute;top:4px;right:5px;text-align:right;pointer-events:none;font-family:'Courier New',Courier,monospace;line-height:1.4}
-.a4-ts .ts-d{display:block;font-size:7px;font-weight:400;color:#fff;letter-spacing:.3px;text-shadow:1px 1px 2px rgba(0,0,0,.95)}
-.a4-ts .ts-l{display:block;font-size:5.5px;font-weight:400;color:#fff;letter-spacing:.2px;text-shadow:1px 1px 2px rgba(0,0,0,.95);white-space:pre-line}
-
-@media print{
-  body *{visibility:hidden}
-  #printArea,#printArea *{visibility:visible}
-  #printArea{position:fixed;top:0;left:0;width:100%;z-index:99999;background:#fff}
-  .a4-page{box-shadow:none!important;margin:0!important;border-radius:0!important;width:210mm!important;padding:11mm 12mm!important;page-break-after:always}
+.ts-overlay {
+  position: absolute; top: 5px; right: 6px;
+  text-align: right; display: none;
+  pointer-events: none;
+  font-family: 'Courier New', monospace; line-height: 1.4;
+}
+.photo-slot.has-photo .ts-overlay { display: block; }
+.ts-overlay .ts-line1 {
+  display: block; font-size: 9px; color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,.95);
+}
+.ts-overlay .ts-line2 {
+  display: block; font-size: 7px; color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,.95);
+  white-space: pre-line;
 }
 
-/* ══ MISC ══ */
-.flex{display:flex}.gap2{gap:8px}.gap3{gap:12px}.aic{align-items:center}.jb{justify-content:space-between}
-.mb4{margin-bottom:16px}.mb6{margin-bottom:24px}
-.spin{width:15px;height:15px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block}
-.empty{text-align:center;padding:44px 20px;color:var(--muted);font-size:13.5px}
-.divider{height:1px;background:var(--border);margin:20px 0}
-
-/* ══ BOTTOM NAV (mobile only) ══ */
-#bottomNav{
-  display:none;position:fixed;bottom:0;left:0;right:0;
-  background:var(--p);
-  height:var(--bn);
-  z-index:200;
-  box-shadow:0 -2px 20px rgba(7,30,73,.2);
-  padding-bottom:env(safe-area-inset-bottom,0);
+/* Photo settings panel */
+.photo-settings {
+  background: var(--ltr); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px;
+  display: none;
 }
-.bn-inner{display:flex;height:var(--bn)}
-.bn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:rgba(255,255,255,.55);font-size:10px;font-weight:600;border:none;background:none;cursor:pointer;transition:color .18s;padding:0}
-.bn-btn.active{color:#fff}
-.bn-btn svg{opacity:.7}
-.bn-btn.active svg{opacity:1}
-.bn-dot{width:4px;height:4px;border-radius:50%;background:#fff;margin-top:1px;opacity:0}
-.bn-btn.active .bn-dot{opacity:1}
-
-/* ══ OVERLAY (mobile sidebar) ══ */
-#overlay{position:fixed;inset:0;background:rgba(7,30,73,.45);z-index:150;display:none}
-#overlay.show{display:block}
-
-/* ══ RESPONSIVE ══ */
-@media(max-width:768px){
-  :root{--sb:260px}
-  #sidebar{transform:translateX(-100%)}
-  #sidebar.open{transform:translateX(0)}
-  #main{margin-left:0;padding-bottom:var(--bn)}
-  .hamburger{display:flex}
-  .topbar{padding:12px 16px}
-  .page{padding:16px}
-  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px}
-  .stat{padding:14px 16px}
-  .stat .val{font-size:22px}
-  #bottomNav{display:block}
-  .topbar-date{display:none}
-  .card-hd{flex-wrap:wrap}
-  .tbl th,.tbl td{padding:8px 10px;font-size:12px}
+.photo-settings.show { display: block; }
+.ps-row {
+  display: flex; gap: 6px; align-items: center; margin-bottom: 4px;
 }
-@media(max-width:400px){
-  .stats-grid{grid-template-columns:1fr 1fr}
-  .slots-grid{grid-template-columns:1fr 1fr}
-  .btn{font-size:12px;padding:7px 13px}
+.ps-row:last-child { margin: 0; }
+.ps-row label { font-size: 10px; font-weight: 700; color: var(--muted); min-width: 34px; flex-shrink: 0; }
+.ps-input {
+  flex: 1; padding: 4px 8px; border-radius: 6px;
+  border: 1.5px solid var(--border);
+  font-size: 11px; font-family: inherit; background: #fff;
 }
-@media(min-width:769px){
-  #bottomNav{display:none!important}
+.ps-input:focus { outline: none; border-color: var(--blue); }
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+#toast {
+  position: fixed; bottom: 26px; right: 20px;
+  background: var(--navy); color: #fff;
+  padding: 11px 20px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 700;
+  box-shadow: 0 4px 20px rgba(7,30,73,.25);
+  transform: translateY(80px); opacity: 0;
+  transition: all .28s; z-index: 9999;
+  max-width: calc(100vw - 40px);
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.error { background: var(--red); }
+
+/* =========================================================
+   LOADER
+   ========================================================= */
+#loader {
+  position: fixed; inset: 0;
+  background: rgba(255,255,255,.8);
+  display: none; align-items: center; justify-content: center;
+  z-index: 9000; backdrop-filter: blur(3px);
+}
+#loader.show { display: flex; }
+.loader-inner {
+  background: #fff; border-radius: 16px;
+  padding: 28px 36px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 14px;
+  box-shadow: 0 8px 40px rgba(7,30,73,.18);
+}
+.loader-inner p { font-size: 14px; font-weight: 700; color: var(--navy); }
+.spin-big {
+  width: 36px; height: 36px;
+  border: 3.5px solid var(--lt); border-top-color: var(--blue);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+.spin-sm {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+  border-radius: 50%; animation: spin .6s linear infinite;
+  display: inline-block; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(7,30,73,.42);
+  display: none; align-items: flex-end; justify-content: center;
+  z-index: 500; backdrop-filter: blur(2px);
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: #fff;
+  border-radius: 18px 18px 0 0;
+  padding: 22px 22px max(22px, env(safe-area-inset-bottom, 22px));
+  width: 100%; max-width: 560px;
+  box-shadow: 0 -8px 40px rgba(7,30,73,.18);
+  animation: slideUp .22s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(60px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.modal-drag {
+  width: 40px; height: 4px; background: #dde;
+  border-radius: 4px; margin: 0 auto 16px;
+}
+.modal-box h3 { font-size: 16px; font-weight: 800; color: var(--navy); margin-bottom: 12px; }
+.modal-actions { display: flex; gap: 9px; margin-top: 18px; justify-content: flex-end; }
+
+/* Print modal full screen */
+#moPrint { align-items: stretch; padding: 0; }
+#moPrint .modal-box {
+  max-width: 100%; border-radius: 0; padding: 0;
+  max-height: 100vh; display: flex; flex-direction: column;
+}
+.print-toolbar {
+  padding: 13px 18px;
+  background: linear-gradient(90deg, var(--navy), var(--navy2));
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.print-toolbar h3 { color: #fff; font-size: 14px; font-weight: 800; }
+.print-actions { display: flex; gap: 8px; }
+.print-body { flex: 1; overflow-y: auto; padding: 16px; background: #e4e8f0; }
+
+/* =========================================================
+   A4 PAGE STYLES (preview + print)
+   ========================================================= */
+.a4-page {
+  width: 794px; background: #fff;
+  padding: 28px 36px; margin: 0 auto 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.15);
+  border-radius: 3px; font-family: system-ui, sans-serif;
+}
+
+/* Kop Surat */
+.kop-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
+.kop-logo {
+  width: 56px; height: 56px; flex-shrink: 0;
+  background: var(--navy); border-radius: 50%;
+  border: 3px solid var(--gold);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.kop-logo .kl1 { font-size: 11px; font-weight: 900; color: #fff; line-height: 1.1; text-align: center; }
+.kop-logo .kl2 { font-size: 7px; color: var(--gold); font-weight: 700; }
+.kop-text { flex: 1; text-align: center; }
+.kop-text .kt1 { font-size: 9.5px; font-weight: 600; color: #555; }
+.kop-text .kt2 { font-size: 10.5px; font-weight: 700; color: #222; margin-top: 1px; }
+.kop-text .kt3 {
+  font-size: 15px; font-weight: 900; color: var(--navy);
+  text-transform: uppercase; letter-spacing: .5px; margin-top: 2px;
+}
+.kop-text .kt4 { font-size: 8px; color: #777; margin-top: 2px; }
+.kop-divider {
+  height: 3px; background: var(--navy);
+  margin: 7px 0 2px;
+}
+.kop-divider::after {
+  content: ''; display: block;
+  height: 1px; background: var(--gold); margin-top: 2px;
+}
+.kop-subtitle { text-align: center; padding: 7px 0 9px; border-bottom: 1px dashed #c8d8ee; }
+.kop-subtitle .ks1 {
+  font-size: 11.5px; font-weight: 800; color: var(--navy);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.kop-subtitle .ks2 { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+/* Page 2+ header */
+.pg2-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 7px; margin-bottom: 10px;
+  border-bottom: 2px solid var(--navy);
+}
+.pg2-header .ph1 { font-size: 8.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; }
+.pg2-header .ph2 { font-size: 8px; color: var(--muted); }
+
+/* School rows */
+.a4-schools { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.a4-row {
+  display: flex; align-items: stretch; gap: 7px;
+  padding-bottom: 7px; border-bottom: 1px solid #eaeeea;
+}
+.a4-row:last-child { border-bottom: none; padding-bottom: 0; }
+.a4-school-name {
+  width: 98px; flex-shrink: 0;
+  display: flex; align-items: center;
+  font-size: 7.5px; font-weight: 800; color: var(--navy);
+  padding: 4px 6px; background: var(--lt);
+  border-radius: 5px; border-left: 3px solid var(--navy);
+  line-height: 1.35;
+}
+.a4-photos-wrap { flex: 1; display: grid; gap: 6px; }
+.a4-photo-box {
+  position: relative; aspect-ratio: 4/3;
+  border-radius: 5px; overflow: hidden;
+  background: #f0f4fb; border: 1px solid #c8d8ee;
+}
+.a4-photo-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.a4-ts {
+  position: absolute; top: 4px; right: 5px;
+  text-align: right;
+  font-family: 'Courier New', Courier, monospace;
+  line-height: 1.4; pointer-events: none;
+}
+.a4-ts .d {
+  display: block; font-size: 7px; color: #fff;
+  letter-spacing: .3px; text-shadow: 1px 1px 2px rgba(0,0,0,.95);
+}
+.a4-ts .l {
+  display: block; font-size: 5.5px; color: #fff;
+  letter-spacing: .2px; text-shadow: 1px 1px 2px rgba(0,0,0,.95);
+  white-space: pre-line;
+}
+
+/* =========================================================
+   BOTTOM NAV (mobile)
+   ========================================================= */
+#bottom-nav {
+  display: none; position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 60px; background: var(--navy);
+  z-index: 200; box-shadow: 0 -2px 16px rgba(7,30,73,.2);
+}
+.bn-inner { display: flex; height: 60px; }
+.bn-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  color: rgba(255,255,255,.5); font-size: 10px; font-weight: 600;
+  border: none; background: none; cursor: pointer;
+}
+.bn-btn.active { color: #fff; }
+.bn-btn svg { opacity: .7; }
+.bn-btn.active svg { opacity: 1; }
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13.5px; }
+
+/* =========================================================
+   PRINT MEDIA
+   ========================================================= */
+@media print {
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area {
+    position: fixed; top: 0; left: 0;
+    width: 100%; z-index: 99999; background: #fff;
+  }
+  .a4-page {
+    box-shadow: none !important; margin: 0 !important;
+    border-radius: 0 !important;
+    width: 210mm !important; padding: 12mm 14mm !important;
+    min-height: 297mm !important;
+    page-break-after: always;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; padding-bottom: 60px; }
+  .topbar { padding: 12px 16px; }
+  .ham-btn { display: flex; }
+  .topbar-date { display: none; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .page { padding: 14px; }
+  #bottom-nav { display: block; }
+}
+@media (min-width: 769px) {
+  #bottom-nav { display: none !important; }
+  .ham-btn { display: none !important; }
 }
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
+<!-- =====================================================
+     SIDEBAR
+     ===================================================== -->
 <nav id="sidebar">
-  <div class="sb-logo">
-    <div class="sb-icon">
-      <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-    </div>
+  <div class="sb-top">
     <h1>SPPG Kuta Alam<br>Mulia 2</h1>
-    <span>Banda Aceh</span>
+    <p>Banda Aceh</p>
   </div>
   <div class="sb-nav">
-    <button class="nav-btn active" onclick="nav('dashboard');closeSidebar()">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <button class="nav-btn active" data-page="dashboard" onclick="goPage('dashboard'); closeSidebar()">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
       Dashboard
     </button>
-    <button class="nav-btn" onclick="nav('daftar');closeSidebar()">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    <button class="nav-btn" data-page="daftar" onclick="goPage('daftar'); closeSidebar()">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
       Daftar Surat Jalan
     </button>
   </div>
   <div class="sb-foot">
     <div class="fb-dot" id="fbDot"></div>
-    <span id="fbStatus">Menghubungkan...</span>
-    <span style="margin-left:auto">v1.5</span>
+    <span id="fbTxt">Menghubungkan...</span>
+    <span style="margin-left:auto;opacity:.5">v3.0</span>
   </div>
 </nav>
 
-<!-- OVERLAY mobile -->
 <div id="overlay" onclick="closeSidebar()"></div>
 
-<!-- MAIN -->
+<!-- =====================================================
+     MAIN
+     ===================================================== -->
 <div id="main">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="hamburger" onclick="openSidebar()" aria-label="Menu">
+      <button class="ham-btn" onclick="openSidebar()">
         <span></span><span></span><span></span>
       </button>
-      <h2 id="pgTitle">Dashboard</h2>
+      <h2 id="pageTitle">Dashboard</h2>
     </div>
-    <span class="topbar-date" id="tbDate"></span>
+    <div class="topbar-date" id="topDate"></div>
   </div>
 
-  <!-- ═══ DASHBOARD ═══ -->
-  <div class="page active" id="pg-dashboard">
+  <!-- ── DASHBOARD ── -->
+  <div class="page active" id="page-dashboard">
 
     <div class="stats-grid">
-      <div class="stat"><div class="lbl">Total Surat Jalan</div><div class="val" id="sTotal">—</div><div class="sub">Semua waktu</div></div>
-      <div class="stat"><div class="lbl">Bulan Ini</div><div class="val" id="sBulan">—</div><div class="sub" id="sBulanLbl">—</div></div>
-      <div class="stat"><div class="lbl">Total Foto</div><div class="val" id="sFoto">—</div><div class="sub">Terupload</div></div>
-      <div class="stat"><div class="lbl">Sudah Cetak</div><div class="val" id="sCetak">—</div><div class="sub">Dokumen</div></div>
+      <div class="stat-card">
+        <div class="s-lbl">Total Surat Jalan</div>
+        <div class="s-val" id="st-total">0</div>
+        <div class="s-sub">Semua waktu</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-lbl">Bulan Ini</div>
+        <div class="s-val" id="st-bulan">0</div>
+        <div class="s-sub" id="st-bulan-lbl">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-lbl">Total Foto</div>
+        <div class="s-val" id="st-foto">0</div>
+        <div class="s-sub">Terupload</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-lbl">Sudah Cetak</div>
+        <div class="s-val" id="st-cetak">0</div>
+        <div class="s-sub">Dokumen</div>
+      </div>
     </div>
 
-    <!-- INPUT TOGGLE -->
-    <div class="flex aic jb mb4">
-      <div style="font-size:15px;font-weight:700;color:var(--p)">📋 Input Dokumentasi</div>
-      <button class="btn bp" onclick="toggleInput()" id="btnToggleInput">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-        <span id="btnInputTxt">Buka Form</span>
+    <!-- Input toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:700;color:var(--navy)">📋 Input Dokumentasi</div>
+      <button class="btn btn-primary" id="btnToggle" onclick="toggleInput()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span id="toggleTxt">Buka Form</span>
       </button>
     </div>
 
-    <!-- INPUT SECTION -->
+    <!-- Input Section -->
     <div id="inputSection">
-      <div class="input-hdr">
+      <div class="input-header">
         <h3>📸 Form Input Dokumentasi</h3>
-        <button class="btn sm" style="background:var(--p-lt);color:var(--p)" onclick="toggleInput()">✕ Tutup</button>
+        <button class="btn btn-sm" style="background:var(--lt);color:var(--navy)" onclick="toggleInput()">✕ Tutup</button>
       </div>
-      <div class="input-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
-          <div class="fg" style="margin:0"><label>Tanggal Distribusi</label><input type="date" id="inTgl" class="fc"></div>
-          <div class="fg" style="margin:0"><label>Keterangan</label><input type="text" id="inKet" class="fc" placeholder="Opsional..."></div>
+      <div style="padding:20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+          <div>
+            <label class="form-label">Tanggal Distribusi</label>
+            <input type="date" id="inTgl" class="form-input">
+          </div>
+          <div>
+            <label class="form-label">Keterangan</label>
+            <input type="text" id="inKet" class="form-input" placeholder="Opsional...">
+          </div>
         </div>
-        <div id="schCont"></div>
-        <div class="divider"></div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn bp" id="btnSave" onclick="saveDoc()">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <div id="schoolsContainer"></div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btnSave" onclick="saveDoc()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
             Simpan Dokumentasi
           </button>
-          <button class="btn bq" onclick="resetForm()">Reset</button>
+          <button class="btn btn-outline" onclick="resetForm()">Reset</button>
         </div>
       </div>
     </div>
 
-    <!-- REKAP -->
+    <!-- Rekap -->
     <div class="card">
-      <div class="card-hd">
+      <div class="card-header">
         <h3>📊 Rekap Per Bulan</h3>
-        <input type="month" id="fMonth" onchange="renderDashboard()">
+        <input type="month" id="filterDash" onchange="renderDashboard()">
       </div>
-      <div class="tbl-wrap">
-        <table class="tbl"><thead><tr><th>Tanggal</th><th>Hari</th><th>Keterangan</th><th>Foto</th><th>Status</th><th style="text-align:center">Aksi</th></tr></thead>
-        <tbody id="dbTbody"></tbody></table>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th><th>Hari</th><th>Keterangan</th>
+              <th>Foto</th><th>Status</th><th style="text-align:center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="dashBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <!-- ═══ DAFTAR ═══ -->
-  <div class="page" id="pg-daftar">
-    <div class="flex aic jb mb4" style="flex-wrap:wrap;gap:10px">
-      <input type="month" id="fDaftar" onchange="renderDaftar()">
-      <span style="font-size:11.5px;color:var(--muted)">⏱ Auto-hapus setelah 7 hari</span>
+  <!-- ── DAFTAR ── -->
+  <div class="page" id="page-daftar">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <input type="month" id="filterDaftar" onchange="renderDaftar()">
+      <span style="font-size:11.5px;color:var(--muted)">⏱ Data otomatis terhapus setelah 7 hari</span>
     </div>
     <div class="card">
-      <div class="tbl-wrap">
-        <table class="tbl"><thead><tr><th>Tanggal</th><th>Hari</th><th>Keterangan</th><th>Sekolah</th><th>Foto</th><th>Status</th><th style="text-align:center">Aksi</th></tr></thead>
-        <tbody id="dfTbody"></tbody></table>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th><th>Hari</th><th>Keterangan</th>
+              <th>Sekolah</th><th>Foto</th><th>Status</th>
+              <th style="text-align:center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="daftarBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 </div>
 
-<!-- BOTTOM NAV (mobile) -->
-<nav id="bottomNav">
+<!-- =====================================================
+     BOTTOM NAV (mobile)
+     ===================================================== -->
+<nav id="bottom-nav">
   <div class="bn-inner">
-    <button class="bn-btn active" id="bn-dashboard" onclick="nav('dashboard')">
-      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <button class="bn-btn active" id="bn-dashboard" onclick="goPage('dashboard')">
+      <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
       Dashboard
-      <div class="bn-dot"></div>
     </button>
-    <button class="bn-btn" id="bn-daftar" onclick="nav('daftar')">
-      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    <button class="bn-btn" id="bn-daftar" onclick="goPage('daftar')">
+      <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
       Daftar
-      <div class="bn-dot"></div>
     </button>
   </div>
 </nav>
 
-<!-- DELETE MODAL -->
-<div class="mo" id="moDel">
-  <div class="mb">
-    <div class="mb-drag"></div>
+<!-- =====================================================
+     MODALS
+     ===================================================== -->
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="moDel">
+  <div class="modal-box">
+    <div class="modal-drag"></div>
     <h3>🗑️ Hapus Dokumentasi</h3>
-    <p style="font-size:13.5px;color:var(--muted);line-height:1.6">Yakin ingin menghapus? Data dan foto tidak bisa dikembalikan.</p>
-    <div class="m-act">
-      <button class="btn bq sm" onclick="closeMo('moDel')">Batal</button>
-      <button class="btn brd sm" onclick="confirmDel()">Ya, Hapus</button>
+    <p style="font-size:13.5px;color:var(--muted);line-height:1.6">Yakin ingin menghapus? Data tidak bisa dikembalikan.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('moDel')">Batal</button>
+      <button class="btn btn-red btn-sm" onclick="confirmDelete()">Ya, Hapus</button>
     </div>
   </div>
 </div>
 
-<!-- EDIT MODAL -->
-<div class="mo" id="moEdit">
-  <div class="mb" style="max-width:600px;max-height:90vh;overflow-y:auto;border-radius:16px 16px 0 0">
-    <div class="mb-drag"></div>
+<!-- Edit Modal -->
+<div class="modal-overlay" id="moEdit">
+  <div class="modal-box" style="max-width:600px;max-height:88vh;overflow-y:auto;border-radius:18px 18px 0 0">
+    <div class="modal-drag"></div>
     <h3>✏️ Edit Dokumentasi</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-      <div class="fg" style="margin:0"><label>Tanggal</label><input type="date" id="edTgl" class="fc"></div>
-      <div class="fg" style="margin:0"><label>Keterangan</label><input type="text" id="edKet" class="fc"></div>
-    </div>
-    <div style="font-size:12px;font-weight:700;color:var(--p);margin-bottom:8px">📸 Ganti Foto (opsional — tap foto untuk ganti)</div>
-    <div id="editPhotosCont" style="max-height:320px;overflow-y:auto"></div>
-    <div class="m-act">
-      <button class="btn bq sm" onclick="closeMo('moEdit');_editPhotos={}">Batal</button>
-      <button class="btn bp sm" onclick="confirmEdit()">Simpan Perubahan</button>
-    </div>
-  </div>
-</div>
-
-<!-- PRINT MODAL -->
-<div class="mo" id="moPrint">
-  <div class="mb">
-    <div class="pm-toolbar">
-      <h3>📄 Preview Cetak A4</h3>
-      <div class="pm-actions">
-        <button class="btn sm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25)" onclick="doPrint()">🖨️ Print</button>
-        <button class="btn sm" style="background:#e8a020;color:#fff" onclick="doSavePDF()">⬇️ PDF</button>
-        <button class="btn sm" style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)" onclick="closeMo('moPrint')">✕</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <label class="form-label">Tanggal</label>
+        <input type="date" id="edTgl" class="form-input">
+      </div>
+      <div>
+        <label class="form-label">Keterangan</label>
+        <input type="text" id="edKet" class="form-input">
       </div>
     </div>
-    <div class="pm-body" id="pmBody"></div>
+    <p style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">📸 Ganti Foto — tap foto untuk pilih baru</p>
+    <div id="editPhotosCont"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('moEdit')">Batal</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmEdit()">Simpan Perubahan</button>
+    </div>
   </div>
 </div>
 
-<div id="loader"><div class="loader-box"><div class="spin-lg"></div><p id="loaderTxt">Menyimpan...</p></div></div>
-<div id="printArea" style="display:none"></div>
+<!-- Print Modal -->
+<div class="modal-overlay" id="moPrint">
+  <div class="modal-box">
+    <div class="print-toolbar">
+      <h3>📄 Preview Dokumen A4</h3>
+      <div class="print-actions">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3)" onclick="doPrint()">🖨️ Print</button>
+        <button class="btn btn-sm btn-gold" onclick="doPDF()">⬇️ PDF</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.18)" onclick="closeModal('moPrint')">✕</button>
+      </div>
+    </div>
+    <div class="print-body" id="printPreview"></div>
+  </div>
+</div>
+
+<!-- Loader -->
+<div id="loader">
+  <div class="loader-inner">
+    <div class="spin-big"></div>
+    <p id="loaderTxt">Memproses...</p>
+  </div>
+</div>
+
+<div id="print-area" style="display:none"></div>
 <div id="toast"></div>
 
+<!-- =====================================================
+     FIREBASE
+     ===================================================== -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB_CONFIG = {
+  apiKey: "AIzaSyCnPoaPiUeG2ufGHd7ErO2sS8x4kdp8Fqo",
+  authDomain: "surat-jalan-af1a8.firebaseapp.com",
+  projectId: "surat-jalan-af1a8",
+  storageBucket: "surat-jalan-af1a8.firebasestorage.app",
+  messagingSenderId: "392249849486",
+  appId: "1:392249849486:web:78bc2718a44bfd6de83bdf"
+};
+
+try {
+  const app = initializeApp(FB_CONFIG, 'sppg_app');
+  window._db = getFirestore(app);
+  window._fbFn = { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy };
+  window._fbReady = true;
+  document.getElementById('fbDot').className = 'fb-dot ok';
+  document.getElementById('fbTxt').textContent = 'Firebase OK';
+} catch(e) {
+  window._fbReady = false;
+  document.getElementById('fbDot').className = 'fb-dot';
+  document.getElementById('fbTxt').textContent = 'Mode Lokal';
+  console.warn('Firebase init gagal:', e.message);
+}
+</script>
+
+<!-- =====================================================
+     APP SCRIPT
+     ===================================================== -->
 <script>
-// ══ SCHOOLS ══
-const SCHOOLS=[
-  {name:"TK/RA Purwanida",                      maps:"https://maps.app.goo.gl/JaggRy7bVrM8wVwL8", coord:"5°33'14.2\"N 95°19'48.3\"E", kel:"Lambaro Skep"},
-  {name:"TK Negeri 3",                           maps:"https://maps.app.goo.gl/HWbkTLeZMtDnBizg7", coord:"5°33'05.8\"N 95°19'52.1\"E", kel:"Lambaro Skep"},
-  {name:"Paud Sinyak Metuah",                    maps:"https://maps.app.goo.gl/ZES2Qdt219rTqmqf7", coord:"5°33'21.0\"N 95°20'01.4\"E", kel:"Kuta Alam"},
-  {name:"SD 32 Banda Aceh",                      maps:"https://maps.app.goo.gl/hx3JjTdbL5fnYDuZ7", coord:"5°33'18.7\"N 95°19'55.6\"E", kel:"Kuta Alam"},
-  {name:"SD 36 Banda Aceh",                      maps:"https://maps.app.goo.gl/fDXh8iAy9MXWffZi8", coord:"5°33'10.3\"N 95°20'05.2\"E", kel:"Kuta Alam"},
-  {name:"MTS Darul 'Ulum YPUI",                  maps:"https://maps.app.goo.gl/CyUikRRnmb6PUPyN8", coord:"5°33'27.9\"N 95°20'08.7\"E", kel:"Kuta Alam"},
-  {name:"SMP Islam Darul 'Ulum YPUI",            maps:"https://maps.app.goo.gl/zjL9QzCF9fe6DMvF8", coord:"5°33'29.1\"N 95°20'09.3\"E", kel:"Kuta Alam"},
-  {name:"MA Darul 'Ulum YPUI",                   maps:"https://maps.app.goo.gl/5QihsyeqpLU2DoYx8", coord:"5°33'30.4\"N 95°20'10.1\"E", kel:"Kuta Alam"},
-  {name:"MTS 1 Banda Aceh",                      maps:"https://maps.app.goo.gl/Ex5RWZTRzebdVc7j7", coord:"5°33'08.5\"N 95°20'14.8\"E", kel:"Kuta Alam"}
+// ════════════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════════════
+const SCHOOLS = [
+  { name: "TK/RA Purwanida",                     maps: "https://maps.app.goo.gl/JaggRy7bVrM8wVwL8", kel: "Lambaro Skep" },
+  { name: "TK Negeri 3",                          maps: "https://maps.app.goo.gl/HWbkTLeZMtDnBizg7", kel: "Lambaro Skep" },
+  { name: "Paud Sinyak Metuah",                   maps: "https://maps.app.goo.gl/ZES2Qdt219rTqmqf7", kel: "Kuta Alam"    },
+  { name: "SD 32 Banda Aceh",                     maps: "https://maps.app.goo.gl/hx3JjTdbL5fnYDuZ7", kel: "Kuta Alam"    },
+  { name: "SD 36 Banda Aceh",                     maps: "https://maps.app.goo.gl/fDXh8iAy9MXWffZi8", kel: "Kuta Alam"    },
+  { name: "MTS Darul 'Ulum YPUI",                 maps: "https://maps.app.goo.gl/CyUikRRnmb6PUPyN8", kel: "Kuta Alam"    },
+  { name: "SMP Islam Darul 'Ulum YPUI",           maps: "https://maps.app.goo.gl/zjL9QzCF9fe6DMvF8", kel: "Kuta Alam"    },
+  { name: "MA Darul 'Ulum YPUI",                  maps: "https://maps.app.goo.gl/5QihsyeqpLU2DoYx8", kel: "Kuta Alam"    },
+  { name: "MTS 1 Banda Aceh",                     maps: "https://maps.app.goo.gl/Ex5RWZTRzebdVc7j7", kel: "Kuta Alam"    }
 ];
-const HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-const BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-const SLOT_LBL=['📦 Pengantaran','✅ Pengambilan'];
 
-// ══ SIDEBAR MOBILE ══
-function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+const HARI  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const SLOT_LABELS = ['📦 Pengantaran', '✅ Pengambilan'];
 
-// ══ FIREBASE STATUS ══
-function checkFbStatus(){
-  setTimeout(()=>{
-    const ok=window._fbOk===true;
-    document.getElementById('fbDot').className='fb-dot'+(ok?' ok':'');
-    document.getElementById('fbStatus').textContent=ok?'Firebase OK':'Mode Lokal';
-  },1800);
+// ════════════════════════════════════════════════════
+//  LOCAL STORAGE
+// ════════════════════════════════════════════════════
+function getLocal() {
+  try { return JSON.parse(localStorage.getItem('sppg_docs') || '[]'); }
+  catch { return []; }
+}
+function setLocal(data) {
+  try { localStorage.setItem('sppg_docs', JSON.stringify(data)); }
+  catch(e) { console.warn('localStorage full:', e.message); }
 }
 
-// ══ LOCAL STORAGE ══
-function getLocal(){try{return JSON.parse(localStorage.getItem('sppg_v5')||'[]')}catch{return[]}}
-function setLocal(d){try{localStorage.setItem('sppg_v5',JSON.stringify(d))}catch{}}
-
-// ══ AUTO-CLEAN > 7 DAYS ══
-async function autoClean(){
-  const c=new Date();c.setDate(c.getDate()-7);
-  const cut=c.toISOString().substring(0,10);
-  if(window._fbOk&&window._db){
-    try{
-      const{collection,getDocs,query,where,doc,deleteDoc}=window._fb;
-      const q=query(collection(window._db,'surat_jalan'),where('tanggal','<',cut));
-      const s=await getDocs(q);
-      await Promise.all(s.docs.map(d=>deleteDoc(doc(window._db,'surat_jalan',d.id))));
-      if(s.docs.length) console.log('Auto-clean:',s.docs.length,'docs');
-    }catch(e){console.warn('autoClean:',e)}
-  } else {
-    setLocal(getLocal().filter(d=>d.tanggal>=cut));
+// ════════════════════════════════════════════════════
+//  FIREBASE HELPERS (all wrapped to never throw)
+// ════════════════════════════════════════════════════
+async function fbGetAll() {
+  if (!window._fbReady || !window._db) return [];
+  try {
+    const { collection, getDocs, query, orderBy } = window._fbFn;
+    const q = query(collection(window._db, 'surat_jalan'), orderBy('tanggal', 'desc'));
+    const snap = await Promise.race([
+      getDocs(q),
+      new Promise((_, rej) => setTimeout(() => rej('timeout'), 6000))
+    ]);
+    return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  } catch(e) {
+    console.warn('fbGetAll:', e);
+    return [];
   }
 }
 
-// ══ FETCH ALL DOCS — localStorage (prioritas, ada foto) + Firestore (metadata) ══
-async function fetchDocs(){
-  // Selalu ambil dari localStorage dulu — ini yang punya foto
-  const local=getLocal().sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
-  
-  // Coba ambil dari Firestore juga (untuk data dari perangkat lain)
-  if(window._fbOk&&window._db){
-    try{
-      const{collection,getDocs,query,orderBy}=window._fb;
-      const q=query(collection(window._db,'surat_jalan'),orderBy('tanggal','desc'));
-      const snap=await Promise.race([
-        getDocs(q),
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000))
-      ]);
-      const fbDocs=snap.docs.map(d=>({...d.data(),id:d.id}));
-      // Gabungkan: lokal lebih prioritas (ada foto), Firestore untuk data dari device lain
-      const localIds=new Set(local.map(d=>d.id));
-      const fbOnly=fbDocs.filter(d=>!localIds.has(d.id)&&!local.some(l=>l.fbId===d.id));
-      return [...local, ...fbOnly].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
-    }catch(e){
-      // Firestore timeout/error → pakai localStorage saja
-      console.warn('Firestore fetch skip:',e.message);
-    }
+async function fbAdd(obj) {
+  if (!window._fbReady || !window._db) return null;
+  try {
+    const { collection, addDoc } = window._fbFn;
+    const ref = await addDoc(collection(window._db, 'surat_jalan'), obj);
+    return ref.id;
+  } catch(e) {
+    console.warn('fbAdd:', e.message);
+    return null;
   }
-  return local;
 }
 
-// ══ UI HELPERS ══
-function toast(msg,err=false){
-  const t=document.getElementById('toast');
-  if(!t)return;
-  t.textContent=msg;t.className='show'+(err?' err':'');
-  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3500);
-}
-function loader(show,txt='Memproses...'){
-  const el=document.getElementById('loader');
-  const tEl=document.getElementById('loaderTxt');
-  if(!el)return;
-  if(tEl&&txt)tEl.textContent=txt;
-  el.className=show?'show':'';
-}
-function openMo(id){document.getElementById(id).classList.add('open')}
-function closeMo(id){document.getElementById(id).classList.remove('open')}
-
-function nav(name){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('pg-'+name).classList.add('active');
-  const t={dashboard:'Dashboard',daftar:'Daftar Surat Jalan'};
-  document.getElementById('pgTitle').textContent=t[name]||name;
-  const idx={dashboard:0,daftar:1};
-  document.querySelectorAll('.nav-btn')[idx[name]]?.classList.add('active');
-  document.getElementById('bn-'+name)?.classList.add('active');
-  if(name==='dashboard')renderDashboard();
-  if(name==='daftar')renderDaftar();
-  window.scrollTo(0,0);
+async function fbUpdate(id, data) {
+  if (!window._fbReady || !window._db || !id) return;
+  try {
+    const { doc, updateDoc } = window._fbFn;
+    await updateDoc(doc(window._db, 'surat_jalan', id), data);
+  } catch(e) {
+    console.warn('fbUpdate:', e.message);
+  }
 }
 
-function toggleInput(){
-  const s=document.getElementById('inputSection');
-  const showing=s.classList.contains('show');
-  s.classList.toggle('show');
-  document.getElementById('btnInputTxt').textContent=showing?'Buka Form':'Tutup Form';
-  document.getElementById('btnToggleInput').innerHTML=showing
-    ?'<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Buka Form'
-    :'✕ Tutup Form';
-  if(!showing) setTimeout(()=>document.getElementById('inputSection').scrollIntoView({behavior:'smooth',block:'start'}),150);
+async function fbDelete(id) {
+  if (!window._fbReady || !window._db || !id) return;
+  try {
+    const { doc, deleteDoc } = window._fbFn;
+    await deleteDoc(doc(window._db, 'surat_jalan', id));
+  } catch(e) {
+    console.warn('fbDelete:', e.message);
+  }
 }
 
-// ══ DATE HELPERS ══
-function fmtTgl(s){const d=new Date(s+'T00:00:00');return`${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`}
-function getHari(s){return HARI[new Date(s+'T00:00:00').getDay()]}
-function ym(s){return s.substring(0,7)}
-function todayStr(){return new Date().toISOString().substring(0,10)}
-function nowJam(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
+// ════════════════════════════════════════════════════
+//  GET ALL DOCS (merge local + firebase)
+// ════════════════════════════════════════════════════
+async function getAllDocs() {
+  const local = getLocal();
+  const fb = await fbGetAll();
+  // Local has priority (has photos). Add FB docs not in local.
+  const localIds = new Set(local.map(d => d.id));
+  const fbOnly = fb.filter(d => !localIds.has(d.id) && !local.some(l => l.fbId === d.id));
+  return [...local, ...fbOnly].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+}
 
-// ══ BUILD SCHOOLS UI ══
-let pData=Array.from({length:9},()=>[null,null]);
+// ════════════════════════════════════════════════════
+//  AUTO CLEAN (>7 days)
+// ════════════════════════════════════════════════════
+function autoClean() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 7);
+  const cut = cutoff.toISOString().substring(0, 10);
+  const fresh = getLocal().filter(d => d.tanggal >= cut);
+  setLocal(fresh);
+}
 
-function buildSchoolsUI(){
-  const c=document.getElementById('schCont');c.innerHTML='';
-  SCHOOLS.forEach((sch,si)=>{
-    const div=document.createElement('div');div.className='sch-sec';
-    div.innerHTML=`
-      <div class="sch-hd" onclick="togSch(${si})">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
-            <h4>${sch.name}</h4>
-            <span class="pcnt" id="pc${si}">0/2</span>
+// ════════════════════════════════════════════════════
+//  UI HELPERS
+// ════════════════════════════════════════════════════
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'show' + (isError ? ' error' : '');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.className = '', 3500);
+}
+
+function showLoader(txt = 'Memproses...') {
+  const el = document.getElementById('loader');
+  const txt_el = document.getElementById('loaderTxt');
+  if (txt_el) txt_el.textContent = txt;
+  if (el) el.className = 'show';
+}
+function hideLoader() {
+  const el = document.getElementById('loader');
+  if (el) el.className = '';
+}
+
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'modal-overlay show';
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'modal-overlay';
+}
+
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// ════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function goPage(name) {
+  // Pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+
+  // Sidebar buttons
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`.nav-btn[data-page="${name}"]`).forEach(b => b.classList.add('active'));
+
+  // Bottom nav buttons
+  document.querySelectorAll('.bn-btn').forEach(b => b.classList.remove('active'));
+  const bn = document.getElementById('bn-' + name);
+  if (bn) bn.classList.add('active');
+
+  // Title
+  const titles = { dashboard: 'Dashboard', daftar: 'Daftar Surat Jalan' };
+  setEl('pageTitle', titles[name] || name);
+
+  window.scrollTo(0, 0);
+
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'daftar') renderDaftar();
+}
+
+// ════════════════════════════════════════════════════
+//  DATE HELPERS
+// ════════════════════════════════════════════════════
+function formatDate(s) {
+  const d = new Date(s + 'T00:00:00');
+  return `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`;
+}
+function getDayName(s) { return HARI[new Date(s + 'T00:00:00').getDay()]; }
+function getYearMonth(s) { return s.substring(0, 7); }
+function todayStr() { return new Date().toISOString().substring(0, 10); }
+function nowTime() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+// ════════════════════════════════════════════════════
+//  INPUT TOGGLE
+// ════════════════════════════════════════════════════
+function toggleInput() {
+  const sec = document.getElementById('inputSection');
+  const isOpen = sec.classList.contains('show');
+  sec.classList.toggle('show');
+  setEl('toggleTxt', isOpen ? 'Buka Form' : 'Tutup Form');
+  const btn = document.getElementById('btnToggle');
+  if (btn) btn.querySelector('svg').style.transform = isOpen ? '' : 'rotate(45deg)';
+  if (!isOpen) setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// ════════════════════════════════════════════════════
+//  BUILD SCHOOLS INPUT UI
+// ════════════════════════════════════════════════════
+let photoData = Array.from({ length: 9 }, () => [null, null]);
+
+function buildSchoolsUI() {
+  const container = document.getElementById('schoolsContainer');
+  container.innerHTML = '';
+
+  SCHOOLS.forEach((school, si) => {
+    const sec = document.createElement('div');
+    sec.className = 'school-sec';
+    sec.innerHTML = `
+      <div class="school-head" onclick="toggleSchool(${si})">
+        <div style="min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <h4>${school.name}</h4>
+            <span class="photo-count" id="cnt-${si}">0/2</span>
           </div>
-          <div class="sch-meta">📍 ${sch.coord} · <a href="${sch.maps}" target="_blank" onclick="event.stopPropagation()" style="color:var(--p3)">Maps</a></div>
+          <div class="school-meta">
+            <a href="${school.maps}" target="_blank" onclick="event.stopPropagation()" style="color:var(--blue)">📍 Lihat Maps</a>
+          </div>
         </div>
-        <svg class="chev" id="chev${si}" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        <svg class="chevron" id="chev-${si}" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
       </div>
-      <div class="sch-bd" id="sb${si}">
+      <div class="school-body" id="body-${si}">
         <div class="slots-grid">
-          ${[0,1].map(sl=>`
+          ${[0, 1].map(sl => `
           <div class="slot-wrap">
-            <div class="slot-label-top">
-              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              ${SLOT_LBL[sl]}
-            </div>
-            <div class="slot" id="sl_${si}_${sl}" onclick="trigFile(${si},${sl})">
-              <input type="file" accept="image/*" capture="environment" id="fi_${si}_${sl}" onchange="onFile(event,${si},${sl})">
-              <div class="slot-ph">
-                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <div class="slot-label-txt">${SLOT_LABELS[sl]}</div>
+            <div class="photo-slot" id="slot-${si}-${sl}" onclick="triggerFile(${si},${sl})">
+              <input type="file" accept="image/*" id="file-${si}-${sl}" onchange="onFileSelect(event,${si},${sl})">
+              <div class="slot-placeholder">
+                <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
                 <span>Tap untuk upload</span>
               </div>
-              <img id="im_${si}_${sl}" src="" style="display:none">
-              <div class="ts-overlay" id="tso_${si}_${sl}">
-                <span class="ts-date" id="tsd_${si}_${sl}"></span>
-                <span class="ts-loc" id="tsl_${si}_${sl}"></span>
+              <img id="img-${si}-${sl}" src="" style="display:none">
+              <div class="ts-overlay" id="tso-${si}-${sl}">
+                <span class="ts-line1" id="ts1-${si}-${sl}"></span>
+                <span class="ts-line2" id="ts2-${si}-${sl}"></span>
               </div>
-              <button class="slot-rmv" onclick="rmPhoto(event,${si},${sl})">×</button>
+              <button class="slot-remove" onclick="removePhoto(event,${si},${sl})">×</button>
             </div>
-            <div class="photo-settings hidden" id="ps_${si}_${sl}">
-              <div class="ps-title">⚙️ ${SLOT_LBL[sl]}</div>
+            <div class="photo-settings" id="pset-${si}-${sl}">
               <div class="ps-row">
                 <label>⏰ Jam</label>
-                <input type="time" class="ps-inp" id="psj_${si}_${sl}" oninput="updateOv(${si},${sl})">
+                <input type="time" class="ps-input" id="pj-${si}-${sl}" oninput="updateTimestamp(${si},${sl})">
               </div>
               <div class="ps-row">
                 <label>📍 Area</label>
-                <input type="text" class="ps-inp" id="psk_${si}_${sl}" value="${sch.kel}" oninput="updateOv(${si},${sl})">
+                <input type="text" class="ps-input" id="pk-${si}-${sl}" value="${school.kel}" oninput="updateTimestamp(${si},${sl})">
               </div>
             </div>
           </div>`).join('')}
         </div>
       </div>`;
-    c.appendChild(div);
+    container.appendChild(sec);
   });
 }
 
-function togSch(si){
-  document.getElementById('sb'+si).classList.toggle('open');
-  document.getElementById('chev'+si).classList.toggle('open');
-}
-function trigFile(si,sl){document.getElementById(`fi_${si}_${sl}`).click()}
-
-function onFile(e,si,sl){
-  const f=e.target.files[0];if(!f)return;
-  const jam=nowJam(),kel=SCHOOLS[si].kel;
-  const objUrl=URL.createObjectURL(f);
-  document.getElementById(`psj_${si}_${sl}`).value=jam;
-  document.getElementById(`psk_${si}_${sl}`).value=kel;
-  const im=document.getElementById(`im_${si}_${sl}`);
-  im.src=objUrl; im.style.display='block';
-  document.getElementById(`sl_${si}_${sl}`).classList.add('has');
-  document.getElementById(`ps_${si}_${sl}`).classList.remove('hidden');
-  const tgl=document.getElementById('inTgl').value||todayStr();
-  if(pData[si][sl]?.objUrl) URL.revokeObjectURL(pData[si][sl].objUrl);
-  // Simpan _si _sl agar bisa di-map saat saveDoc
-  pData[si][sl]={file:f, objUrl, tgl, jam, kel, _si:si, _sl:sl};
-  updateOv(si,sl); updCount(si);
+function toggleSchool(si) {
+  document.getElementById('body-' + si).classList.toggle('show');
+  document.getElementById('chev-' + si).classList.toggle('open');
 }
 
-function updateOv(si,sl){
-  const tgl=document.getElementById('inTgl').value||todayStr();
-  const jam=document.getElementById(`psj_${si}_${sl}`).value;
-  const kel=document.getElementById(`psk_${si}_${sl}`).value;
-  if(pData[si][sl]){pData[si][sl].tgl=tgl;pData[si][sl].jam=jam;pData[si][sl].kel=kel}
-  const d=new Date(tgl+'T00:00:00');
-  const ts=`${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear().toString().substring(2)}${jam?', '+jam:''}`;
-  document.getElementById(`tsd_${si}_${sl}`).textContent=ts;
-  document.getElementById(`tsl_${si}_${sl}`).textContent=`Banda Aceh, Aceh\nIndonesia\n${kel}`;
+function triggerFile(si, sl) {
+  document.getElementById(`file-${si}-${sl}`).click();
 }
 
-function rmPhoto(e,si,sl){
+function onFileSelect(e, si, sl) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const jam = nowTime();
+  const kel = SCHOOLS[si].kel;
+  const objUrl = URL.createObjectURL(file);
+
+  // Set input defaults
+  document.getElementById(`pj-${si}-${sl}`).value = jam;
+  document.getElementById(`pk-${si}-${sl}`).value = kel;
+
+  // Show image
+  const imgEl = document.getElementById(`img-${si}-${sl}`);
+  imgEl.src = objUrl;
+  imgEl.style.display = 'block';
+
+  // Add class
+  const slotEl = document.getElementById(`slot-${si}-${sl}`);
+  slotEl.classList.add('has-photo');
+
+  // Show settings
+  document.getElementById(`pset-${si}-${sl}`).classList.add('show');
+
+  // Save data
+  const tgl = document.getElementById('inTgl').value || todayStr();
+  if (photoData[si][sl]?.objUrl) URL.revokeObjectURL(photoData[si][sl].objUrl);
+  photoData[si][sl] = { file, objUrl, tgl, jam, kel, si, sl };
+
+  updateTimestamp(si, sl);
+  updateCount(si);
+}
+
+function updateTimestamp(si, sl) {
+  const tgl = document.getElementById('inTgl').value || todayStr();
+  const jam = document.getElementById(`pj-${si}-${sl}`).value;
+  const kel = document.getElementById(`pk-${si}-${sl}`).value;
+
+  if (photoData[si][sl]) {
+    photoData[si][sl].tgl = tgl;
+    photoData[si][sl].jam = jam;
+    photoData[si][sl].kel = kel;
+  }
+
+  const d = new Date(tgl + 'T00:00:00');
+  const dd = d.getDate().toString().padStart(2,'0');
+  const mm = (d.getMonth()+1).toString().padStart(2,'0');
+  const yy = d.getFullYear().toString().substring(2);
+  const ts = `${dd}/${mm}/${yy}${jam ? ', ' + jam : ''}`;
+
+  setEl(`ts1-${si}-${sl}`, ts);
+  setEl(`ts2-${si}-${sl}`, `Banda Aceh, Aceh\nIndonesia\n${kel}`);
+}
+
+function removePhoto(e, si, sl) {
   e.stopPropagation();
-  pData[si][sl]=null;
-  document.getElementById(`sl_${si}_${sl}`).classList.remove('has');
-  document.getElementById(`im_${si}_${sl}`).src='';
-  document.getElementById(`im_${si}_${sl}`).style.display='none';
-  document.getElementById(`fi_${si}_${sl}`).value='';
-  document.getElementById(`ps_${si}_${sl}`).classList.add('hidden');
-  updCount(si);
+  if (photoData[si][sl]?.objUrl) URL.revokeObjectURL(photoData[si][sl].objUrl);
+  photoData[si][sl] = null;
+  document.getElementById(`slot-${si}-${sl}`).classList.remove('has-photo');
+  const imgEl = document.getElementById(`img-${si}-${sl}`);
+  imgEl.src = '';
+  imgEl.style.display = 'none';
+  document.getElementById(`file-${si}-${sl}`).value = '';
+  document.getElementById(`pset-${si}-${sl}`).classList.remove('show');
+  updateCount(si);
 }
-function updCount(si){
-  document.getElementById('pc'+si).textContent=pData[si].filter(Boolean).length+'/2';
+
+function updateCount(si) {
+  const count = photoData[si].filter(Boolean).length;
+  setEl(`cnt-${si}`, `${count}/2`);
 }
-function resetForm(){
-  document.getElementById('inTgl').value=todayStr();
-  document.getElementById('inKet').value='';
-  pData=Array.from({length:9},()=>[null,null]);
+
+function resetForm() {
+  document.getElementById('inTgl').value = todayStr();
+  document.getElementById('inKet').value = '';
+  photoData = Array.from({ length: 9 }, () => [null, null]);
   buildSchoolsUI();
 }
 
-// ══════════════════════════════════════════════
-//  SIMPAN INSTAN — localStorage first, Firebase background
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════════════
+//  SAVE DOCUMENT
+// ════════════════════════════════════════════════════
+async function saveDoc() {
+  const tgl = document.getElementById('inTgl').value;
+  if (!tgl) { toast('Pilih tanggal distribusi!', true); return; }
 
-// Resize foto → base64 kecil (480px). Kalau gagal → baca as dataURL biasa
-function resizeToBase64(file, maxPx=480, q=0.60){
-  return new Promise(res=>{
-    // Fallback: baca langsung tanpa resize jika bukan image
-    if(!file.type.startsWith('image/')){
-      const fr=new FileReader();
-      fr.onload=e=>res(e.target.result);
-      fr.onerror=()=>res(null);
-      fr.readAsDataURL(file);
-      return;
-    }
-    const img=new Image();
-    const ou=URL.createObjectURL(file);
-    const timeout=setTimeout(()=>{
-      URL.revokeObjectURL(ou);
-      // Fallback ke FileReader jika image load timeout
-      const fr=new FileReader();
-      fr.onload=e=>res(e.target.result);
-      fr.onerror=()=>res(null);
-      fr.readAsDataURL(file);
-    }, 8000);
-    img.onload=()=>{
-      clearTimeout(timeout);
-      URL.revokeObjectURL(ou);
-      let w=img.naturalWidth||img.width||maxPx;
-      let h=img.naturalHeight||img.height||maxPx;
-      if(w===0||h===0){res(null);return}
-      if(w>maxPx||h>maxPx){
-        if(w>=h){h=Math.round(h*maxPx/w);w=maxPx}
-        else{w=Math.round(w*maxPx/h);h=maxPx}
-      }
-      try{
-        const cv=document.createElement('canvas');
-        cv.width=w; cv.height=h;
-        cv.getContext('2d').drawImage(img,0,0,w,h);
-        const b64=cv.toDataURL('image/jpeg',q);
-        res(b64||null);
-      }catch{
-        // Fallback jika canvas gagal (CORS, dll)
-        const fr=new FileReader();
-        fr.onload=e=>res(e.target.result);
-        fr.onerror=()=>res(null);
-        fr.readAsDataURL(file);
-      }
-    };
-    img.onerror=()=>{
-      clearTimeout(timeout);
-      URL.revokeObjectURL(ou);
-      const fr=new FileReader();
-      fr.onload=e=>res(e.target.result);
-      fr.onerror=()=>res(null);
-      fr.readAsDataURL(file);
-    };
-    img.src=ou;
-  });
-}
+  const allPhotos = photoData.flat().filter(Boolean);
+  if (!allPhotos.length) { toast('Upload minimal 1 foto!', true); return; }
 
-async function saveDoc(){
-  const tgl=document.getElementById('inTgl').value;
-  if(!tgl){toast('Pilih tanggal distribusi!',true);return}
-  const allPhotos=pData.flat().filter(Boolean);
-  if(!allPhotos.length){toast('Upload minimal 1 foto!',true);return}
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin-sm"></span> Menyimpan...';
 
-  const btn=document.getElementById('btnSave');
-  btn.disabled=true;
-  btn.innerHTML='<span class="spin"></span> Menyimpan...';
+  try {
+    const ket = document.getElementById('inKet').value;
+    const docId = 'doc_' + Date.now();
 
-  try{
-    const ket=document.getElementById('inKet').value;
-    const docId='doc_'+Date.now();
+    // Read all photos as base64 using FileReader (reliable, no hang)
+    const b64map = {};
+    await Promise.all(allPhotos.map(p => new Promise(resolve => {
+      const fr = new FileReader();
+      fr.onload = e => { b64map[`${p.si}_${p.sl}`] = e.target.result; resolve(); };
+      fr.onerror = () => { b64map[`${p.si}_${p.sl}`] = ''; resolve(); };
+      fr.readAsDataURL(p.file);
+    })));
 
-    // Baca semua foto sebagai base64 via FileReader (reliable, tidak hang)
-    const photoB64={};
-    await Promise.all(
-      allPhotos.map(p=>{
-        const key=`${p._si}_${p._sl}`;
-        return new Promise(res=>{
-          const fr=new FileReader();
-          fr.onload=e=>{photoB64[key]=e.target.result;res()};
-          fr.onerror=()=>{photoB64[key]=p.objUrl||'';res()};
-          fr.readAsDataURL(p.file);
-        });
-      })
-    );
-
-    // Buat schools dengan url foto
-    const schools=SCHOOLS.map((sch,si)=>({
-      name:sch.name,
-      photos:[0,1].map(sl=>{
-        const p=pData[si][sl];
-        if(!p?.file)return null;
-        return{
-          url:photoB64[`${si}_${sl}`]||p.objUrl||'',
-          tgl:p.tgl||tgl, jam:p.jam||'',
-          kel:p.kel||sch.kel, label:SLOT_LBL[sl]
+    // Build schools data
+    const schools = SCHOOLS.map((sch, si) => ({
+      name: sch.name,
+      photos: [0, 1].map(sl => {
+        const p = photoData[si][sl];
+        if (!p) return null;
+        return {
+          url:   b64map[`${si}_${sl}`] || '',
+          tgl:   p.tgl || tgl,
+          jam:   p.jam || '',
+          kel:   p.kel || sch.kel,
+          label: SLOT_LABELS[sl]
         };
       })
     }));
 
-    const obj={
-      id:docId, tanggal:tgl, hari:getHari(tgl),
-      keterangan:ket, schools, printed:false,
-      createdAt:new Date().toISOString(), synced:false
+    const docObj = {
+      id:         docId,
+      tanggal:    tgl,
+      hari:       getDayName(tgl),
+      keterangan: ket,
+      schools,
+      printed:    false,
+      createdAt:  new Date().toISOString()
     };
 
-    // Simpan ke localStorage — INSTAN
-    const local=getLocal();
-    local.unshift(obj);
+    // ✅ STEP 1: Save to localStorage IMMEDIATELY (cannot fail)
+    const local = getLocal();
+    local.unshift(docObj);
     setLocal(local);
 
-    // UI selesai
-    btn.disabled=false;
-    btn.innerHTML=SAVE_BTN_HTML;
-    toast('✓ Tersimpan!');
+    // ✅ UI done
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi`;
+    toast('✓ Dokumentasi berhasil disimpan!');
     toggleInput();
     resetForm();
     renderDashboard();
 
-    // Sync Firebase background
-    syncToFirebase(obj);
-
-  }catch(e){
-    btn.disabled=false;
-    btn.innerHTML=SAVE_BTN_HTML;
-    toast('Gagal: '+e.message,true);
-    console.error('saveDoc:',e);
-  }
-}
-
-const SAVE_BTN_HTML='<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi';
-
-// Sync ke Firebase Storage + Firestore di background
-async function syncToFirebase(obj){
-  if(!window._fbOk||!window._db) return;
-  try{
-    // Upload foto ke Storage dulu (background)
-    const schoolsForFb=JSON.parse(JSON.stringify(obj.schools));
-    if(window._st){
-      for(let si=0;si<schoolsForFb.length;si++){
-        const photos=schoolsForFb[si].photos||[];
-        for(let sl=0;sl<photos.length;sl++){
-          const p=photos[sl];
-          if(!p||!p.url||!p.url.startsWith('data:')) continue;
-          try{
-            const{ref,uploadBytes,getDownloadURL}=window._fb;
-            const res=await fetch(p.url);
-            const blob=await res.blob();
-            const path=`sppg/${obj.tanggal}/s${si}_p${sl}_${Date.now()}.jpg`;
-            const sr=ref(window._st,path);
-            await uploadBytes(sr,blob);
-            const fbUrl=await getDownloadURL(sr);
-            schoolsForFb[si].photos[sl].url=fbUrl; // ganti dengan URL Firebase
-          }catch(e){console.warn('bg upload s'+si+'_p'+sl+':',e.message)}
-        }
+    // STEP 2: Sync to Firebase in BACKGROUND (non-blocking)
+    fbAdd({ ...docObj, id: undefined }).then(fbId => {
+      if (fbId) {
+        const data = getLocal();
+        const idx = data.findIndex(d => d.id === docId);
+        if (idx > -1) { data[idx].fbId = fbId; setLocal(data); }
       }
-    }
-    // Simpan ke Firestore (tanpa foto base64 besar jika sudah ke Storage)
-    const{collection,addDoc}=window._fb;
-    const fbObj={...obj, schools:schoolsForFb, synced:true};
-    delete fbObj.id;
-    const r=await addDoc(collection(window._db,'surat_jalan'),fbObj);
-    // Update id lokal dengan id Firestore
-    const local=getLocal();
-    const idx=local.findIndex(d=>d.id===obj.id);
-    if(idx>-1){local[idx].synced=true;local[idx].fbId=r.id;setLocal(local)}
-    console.log('Synced to Firebase:',r.id);
-  }catch(e){
-    console.warn('Firebase sync gagal (data tetap aman di lokal):',e.message);
+    });
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi`;
+    toast('Gagal menyimpan: ' + e.message, true);
+    console.error('saveDoc error:', e);
   }
 }
 
-// ══ MINI LOADER ══
-function showMiniLoader(txt){
-  try{
-    let el=document.getElementById('miniLoader');
-    if(!el){
-      el=document.createElement('div');
-      el.id='miniLoader';
-      el.style.cssText='position:fixed;top:70px;right:20px;background:var(--p);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;z-index:8000;display:flex;align-items:center;gap:9px;box-shadow:0 4px 16px rgba(7,30,73,.25)';
-      el.innerHTML='<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;flex-shrink:0"></div><span id="miniLoaderTxt">—</span>';
-      document.body.appendChild(el);
-    }
-    const txtEl=document.getElementById('miniLoaderTxt');
-    if(txtEl) txtEl.textContent=txt;
-    el.style.display='flex';
-  }catch(e){console.warn('miniLoader:',e)}
-}
-function hideMiniLoader(){
-  try{
-    const el=document.getElementById('miniLoader');
-    if(el) el.style.display='none';
-  }catch{}
-}
+// ════════════════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════════════════
+async function renderDashboard() {
+  const docs = await getAllDocs();
+  const now = new Date();
+  const thisMonth = now.toISOString().substring(0, 7);
+  const filterVal = document.getElementById('filterDash')?.value || thisMonth;
 
-// ══ DASHBOARD ══
-function setText(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
+  // Stats
+  setEl('st-total', docs.length);
+  setEl('st-bulan', docs.filter(d => getYearMonth(d.tanggal) === thisMonth).length);
+  setEl('st-bulan-lbl', BULAN[now.getMonth()] + ' ' + now.getFullYear());
+  setEl('st-foto', docs.reduce((s, d) => s + (d.schools || []).reduce((ss, sc) => ss + (sc.photos || []).filter(Boolean).length, 0), 0));
+  setEl('st-cetak', docs.filter(d => d.printed).length);
 
-async function renderDashboard(){
-  const docs=await fetchDocs();
-  const now=new Date();const tm=now.toISOString().substring(0,7);
-  const fv=(document.getElementById('fMonth')?.value)||tm;
-
-  setText('sTotal', docs.length);
-  setText('sBulan', docs.filter(d=>ym(d.tanggal)===tm).length);
-  setText('sBulanLbl', BULAN[now.getMonth()]+' '+now.getFullYear());
-  setText('sFoto', docs.reduce((s,d)=>s+(d.schools||[]).reduce((ss,sc)=>ss+(sc.photos||[]).filter(Boolean).length,0),0));
-  setText('sCetak', docs.filter(d=>d.printed).length);
-
-  const tb=document.getElementById('dbTbody');
-  if(!tb) return;
-
-  const fil=docs.filter(d=>ym(d.tanggal)===fv);
-  if(!fil.length){
-    tb.innerHTML='<tr><td colspan="6"><div class="empty">Tidak ada data periode ini</div></td></tr>';
+  // Table
+  const tbody = document.getElementById('dashBody');
+  if (!tbody) return;
+  const filtered = docs.filter(d => getYearMonth(d.tanggal) === filterVal);
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">Tidak ada data untuk periode ini</div></td></tr>';
     return;
   }
-  tb.innerHTML=fil.map(d=>{
-    const fc=(d.schools||[]).reduce((s,x)=>s+(x.photos||[]).filter(Boolean).length,0);
-    const docId=d.id;
-    return`<tr>
+  tbody.innerHTML = filtered.map(d => {
+    const photoCount = (d.schools || []).reduce((s, sc) => s + (sc.photos || []).filter(Boolean).length, 0);
+    return `<tr>
       <td>${d.tanggal}</td>
-      <td>${d.hari||getHari(d.tanggal)}</td>
-      <td>${d.keterangan||'—'}</td>
-      <td>${fc} foto</td>
-      <td>${d.printed?'<span class="badge bb">✓ Cetak</span>':'<span class="badge bx">Belum</span>'}</td>
+      <td>${d.hari || getDayName(d.tanggal)}</td>
+      <td>${d.keterangan || '—'}</td>
+      <td>${photoCount} foto</td>
+      <td>${d.printed ? '<span class="badge badge-blue">✓ Cetak</span>' : '<span class="badge badge-gray">Belum</span>'}</td>
       <td style="text-align:center">
-        <div class="flex gap2" style="justify-content:center">
-          <button class="btn sm bp" onclick="openPrint('${docId}')">🖨️</button>
-          <button class="btn sm bq" onclick="openEdit2('${docId}')">✏️</button>
-          <button class="btn sm brd" onclick="openDel('${docId}')">🗑️</button>
+        <div style="display:flex;gap:6px;justify-content:center">
+          <button class="btn btn-primary btn-sm" onclick="openPrint('${d.id}')">🖨️</button>
+          <button class="btn btn-outline btn-sm" onclick="openEdit('${d.id}')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="openDelete('${d.id}')">🗑️</button>
         </div>
       </td>
     </tr>`;
   }).join('');
 }
 
-// ══ DAFTAR ══
-async function renderDaftar(){
-  const docs=await fetchDocs();
-  const fv=document.getElementById('fDaftar').value||new Date().toISOString().substring(0,7);
-  const fil=docs.filter(d=>ym(d.tanggal)===fv);
-  const tb=document.getElementById('dfTbody');
-  if(!fil.length){tb.innerHTML='<tr><td colspan="7"><div class="empty">Tidak ada data</div></td></tr>';return}
-  tb.innerHTML=fil.map(d=>{
-    const sc=(d.schools||[]).filter(s=>(s.photos||[]).some(Boolean)).length;
-    const fc=(d.schools||[]).reduce((s,x)=>s+(x.photos||[]).filter(Boolean).length,0);
-    return`<tr>
-      <td>${d.tanggal}</td><td>${d.hari||getHari(d.tanggal)}</td>
-      <td>${d.keterangan||'—'}</td>
-      <td><span class="badge bb">${sc} sek.</span></td>
-      <td>${fc}</td>
-      <td>${d.printed?'<span class="badge bb">✓</span>':'<span class="badge bx">—</span>'}</td>
+// ════════════════════════════════════════════════════
+//  DAFTAR
+// ════════════════════════════════════════════════════
+async function renderDaftar() {
+  const docs = await getAllDocs();
+  const filterVal = document.getElementById('filterDaftar')?.value || new Date().toISOString().substring(0, 7);
+  const tbody = document.getElementById('daftarBody');
+  if (!tbody) return;
+  const filtered = docs.filter(d => getYearMonth(d.tanggal) === filterVal);
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Tidak ada data</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(d => {
+    const schoolCount = (d.schools || []).filter(s => (s.photos || []).some(Boolean)).length;
+    const photoCount  = (d.schools || []).reduce((s, sc) => s + (sc.photos || []).filter(Boolean).length, 0);
+    return `<tr>
+      <td>${d.tanggal}</td>
+      <td>${d.hari || getDayName(d.tanggal)}</td>
+      <td>${d.keterangan || '—'}</td>
+      <td><span class="badge badge-blue">${schoolCount} sek.</span></td>
+      <td>${photoCount}</td>
+      <td>${d.printed ? '<span class="badge badge-blue">✓</span>' : '<span class="badge badge-gray">—</span>'}</td>
       <td>
-        <div class="flex gap2" style="justify-content:center;flex-wrap:wrap">
-          <button class="btn sm bp" onclick="openPrint('${d.id}')">🖨️ Print</button>
-          <button class="btn sm bq" onclick="openEdit2('${d.id}')">✏️</button>
-          <button class="btn sm brd" onclick="openDel('${d.id}')">🗑️</button>
+        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="openPrint('${d.id}')">🖨️ Print</button>
+          <button class="btn btn-outline btn-sm" onclick="openEdit('${d.id}')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="openDelete('${d.id}')">🗑️</button>
         </div>
       </td>
     </tr>`;
   }).join('');
 }
 
-// ══ DELETE ══
-let _delId=null;
-function openDel(id){_delId=id;openMo('moDel')}
-async function confirmDel(){
-  if(!_delId)return;
-  closeMo('moDel');
-  
-  // Hapus dari localStorage DULU — instan, tidak bisa gagal
-  const local=getLocal();
-  const filtered=local.filter(d=>d.id!==_delId);
-  setLocal(filtered);
+// ════════════════════════════════════════════════════
+//  DELETE
+// ════════════════════════════════════════════════════
+let _deleteId = null;
+
+function openDelete(id) {
+  _deleteId = id;
+  openModal('moDel');
+}
+
+function confirmDelete() {
+  closeModal('moDel');
+  if (!_deleteId) return;
+
+  // Remove from localStorage immediately
+  const data = getLocal().filter(d => d.id !== _deleteId);
+  setLocal(data);
+
   toast('Dihapus ✓');
-  _delId=null;
   renderDashboard();
   renderDaftar();
 
-  // Hapus dari Firebase di background (tidak block UI)
-  if(window._fbOk&&window._db){
-    try{
-      const{doc,deleteDoc}=window._fb;
-      await deleteDoc(doc(window._db,'surat_jalan',_delId||''));
-    }catch(e){console.warn('Firebase delete:',e.message)}
-  }
+  // Firebase background
+  fbDelete(_deleteId);
+  _deleteId = null;
 }
 
-// ══ EDIT ══
-let _editId=null, _editDoc=null;
-async function openEdit2(id){
-  _editId=id;
-  const docs=await fetchDocs();
-  _editDoc=docs.find(x=>x.id===id);
-  if(!_editDoc){toast('Data tidak ditemukan',true);return}
-  document.getElementById('edTgl').value=_editDoc.tanggal;
-  document.getElementById('edKet').value=_editDoc.keterangan||'';
-  // Build foto edit per sekolah
-  buildEditPhotos(_editDoc);
-  openMo('moEdit');
-}
+// ════════════════════════════════════════════════════
+//  EDIT
+// ════════════════════════════════════════════════════
+let _editId = null;
+let _editNewPhotos = {};
 
-// Data foto baru saat edit
-let _editPhotos={};
+async function openEdit(id) {
+  _editId = id;
+  _editNewPhotos = {};
 
-function buildEditPhotos(d){
-  const cont=document.getElementById('editPhotosCont');
-  if(!cont)return;
-  _editPhotos={};
-  cont.innerHTML='';
-  (d.schools||[]).forEach((s,si)=>{
-    const hasPhotos=(s.photos||[]).some(Boolean);
-    const div=document.createElement('div');
-    div.style.cssText='margin-bottom:10px;padding:10px;background:#f8faff;border-radius:8px;border:1px solid var(--border)';
-    div.innerHTML=`
-      <div style="font-size:12px;font-weight:700;color:var(--p);margin-bottom:8px">${s.name}</div>
+  const docs = await getAllDocs();
+  const d = docs.find(x => x.id === id);
+  if (!d) { toast('Data tidak ditemukan', true); return; }
+
+  document.getElementById('edTgl').value = d.tanggal;
+  document.getElementById('edKet').value = d.keterangan || '';
+
+  // Build photo editor
+  const cont = document.getElementById('editPhotosCont');
+  cont.innerHTML = '';
+
+  (d.schools || []).forEach((school, si) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'margin-bottom:10px;padding:10px;background:#f8faff;border-radius:10px;border:1px solid var(--border)';
+    div.innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">${school.name}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        ${[0,1].map(sl=>{
-          const p=(s.photos||[])[sl];
-          const hasP=p&&p.url;
-          return`<div>
-            <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">${SLOT_LBL[sl]}</div>
-            <div style="position:relative;aspect-ratio:4/3;border-radius:7px;overflow:hidden;background:#eef2f8;border:1.5px dashed var(--border);cursor:pointer" onclick="trigEditFile(${si},${sl})">
-              <input type="file" accept="image/*" id="efi_${si}_${sl}" style="display:none" onchange="onEditFile(event,${si},${sl})">
-              ${hasP?`<img id="eimg_${si}_${sl}" src="${p.url}" style="width:100%;height:100%;object-fit:cover">`
-                    :`<div id="eimg_${si}_${sl}" style="display:flex;align-items:center;justify-content:center;height:100%;font-size:10px;color:var(--muted)">Tap ganti foto</div>`}
-              <div id="eover_${si}_${sl}" style="position:absolute;bottom:0;left:0;right:0;background:rgba(7,30,73,.7);color:#fff;font-size:9px;text-align:center;padding:3px;display:none">Ganti ↑</div>
+        ${[0, 1].map(sl => {
+          const p = (school.photos || [])[sl];
+          const hasImg = p && p.url;
+          return `<div>
+            <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">${SLOT_LABELS[sl]}</div>
+            <div style="aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:var(--ltr);border:1.5px dashed var(--border);cursor:pointer;position:relative" onclick="trigEditFile(${si},${sl})">
+              <input type="file" accept="image/*" id="efi-${si}-${sl}" style="display:none" onchange="onEditFile(event,${si},${sl})">
+              ${hasImg
+                ? `<img id="eim-${si}-${sl}" src="${p.url}" style="width:100%;height:100%;object-fit:cover">`
+                : `<div id="eim-${si}-${sl}" style="display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;color:var(--muted)">Tap untuk ganti</div>`
+              }
+              <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(7,30,73,.55);color:#fff;font-size:9px;text-align:center;padding:3px">
+                ${hasImg ? '↑ Tap ganti foto' : '↑ Tap upload foto'}
+              </div>
             </div>
           </div>`;
         }).join('')}
       </div>`;
     cont.appendChild(div);
   });
+
+  openModal('moEdit');
 }
 
-function trigEditFile(si,sl){
-  document.getElementById(`efi_${si}_${sl}`)?.click();
+function trigEditFile(si, sl) {
+  document.getElementById(`efi-${si}-${sl}`)?.click();
 }
 
-function onEditFile(e,si,sl){
-  const f=e.target.files[0]; if(!f)return;
-  const objUrl=URL.createObjectURL(f);
-  _editPhotos[`${si}_${sl}`]={file:f,objUrl};
-  const imgEl=document.getElementById(`eimg_${si}_${sl}`);
-  if(imgEl){
-    imgEl.src=objUrl;
-    imgEl.style.cssText='width:100%;height:100%;object-fit:cover';
-    imgEl.tagName==='IMG'?imgEl.src=objUrl:null;
-    // Ganti div jadi img jika sebelumnya kosong
-    if(imgEl.tagName!=='IMG'){
-      const img=document.createElement('img');
-      img.id=imgEl.id;
-      img.src=objUrl;
-      img.style.cssText='width:100%;height:100%;object-fit:cover';
-      imgEl.parentNode.replaceChild(img,imgEl);
+function onEditFile(e, si, sl) {
+  const file = e.target.files[0];
+  if (!file) return;
+  _editNewPhotos[`${si}_${sl}`] = file;
+  const url = URL.createObjectURL(file);
+  const el = document.getElementById(`eim-${si}-${sl}`);
+  if (el) {
+    if (el.tagName === 'IMG') {
+      el.src = url;
+    } else {
+      const img = document.createElement('img');
+      img.id = el.id;
+      img.src = url;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+      el.replaceWith(img);
     }
   }
 }
 
-async function confirmEdit(){
-  if(!_editId||!_editDoc){closeMo('moEdit');return}
-  const tgl=document.getElementById('edTgl').value;
-  const ket=document.getElementById('edKet').value;
+async function confirmEdit() {
+  if (!_editId) return;
+  const tgl = document.getElementById('edTgl').value;
+  const ket = document.getElementById('edKet').value;
 
-  // Update sekolah dengan foto baru jika ada
-  const updatedSchools=JSON.parse(JSON.stringify(_editDoc.schools||[]));
-  const hasNewPhotos=Object.keys(_editPhotos).length>0;
+  showLoader('Menyimpan perubahan...');
 
-  if(hasNewPhotos){
-    for(const key of Object.keys(_editPhotos)){
-      const [si,sl]=key.split('_').map(Number);
-      const pd=_editPhotos[key];
-      // Resize foto baru
-      const b64=await resizeToBase64(pd.file,480,0.60);
-      if(updatedSchools[si]&&updatedSchools[si].photos){
-        if(!updatedSchools[si].photos[sl])updatedSchools[si].photos[sl]={};
-        updatedSchools[si].photos[sl].url=b64||pd.objUrl;
-        updatedSchools[si].photos[sl].tgl=tgl;
-        updatedSchools[si].photos[sl].label=SLOT_LBL[sl];
+  try {
+    const local = getLocal();
+    const idx = local.findIndex(d => d.id === _editId);
+    if (idx > -1) {
+      local[idx].tanggal    = tgl;
+      local[idx].keterangan = ket;
+      local[idx].hari       = getDayName(tgl);
+
+      // Handle new photos
+      if (Object.keys(_editNewPhotos).length > 0) {
+        await Promise.all(Object.entries(_editNewPhotos).map(([key, file]) => new Promise(resolve => {
+          const [si, sl] = key.split('_').map(Number);
+          const fr = new FileReader();
+          fr.onload = e => {
+            if (local[idx].schools?.[si]?.photos) {
+              if (!local[idx].schools[si].photos[sl]) {
+                local[idx].schools[si].photos[sl] = {};
+              }
+              local[idx].schools[si].photos[sl].url   = e.target.result;
+              local[idx].schools[si].photos[sl].tgl   = tgl;
+              local[idx].schools[si].photos[sl].label = SLOT_LABELS[sl];
+            }
+            resolve();
+          };
+          fr.onerror = () => resolve();
+          fr.readAsDataURL(file);
+        })));
       }
+
+      setLocal(local);
+
+      // Firebase background
+      const updateData = { tanggal: tgl, keterangan: ket, hari: getDayName(tgl) };
+      if (Object.keys(_editNewPhotos).length > 0) updateData.schools = local[idx].schools;
+      fbUpdate(local[idx].fbId || _editId, updateData);
     }
+
+    toast('Data berhasil diperbarui ✓');
+  } catch(e) {
+    toast('Gagal: ' + e.message, true);
   }
 
-  // Update localStorage DULU — instan
-  const local=getLocal();
-  const idx=local.findIndex(d=>d.id===_editId);
-  if(idx>-1){
-    local[idx].tanggal=tgl;
-    local[idx].keterangan=ket;
-    local[idx].hari=getHari(tgl);
-    if(hasNewPhotos) local[idx].schools=updatedSchools;
-    setLocal(local);
-  }
-
-  toast('Diperbarui ✓');
-  closeMo('moEdit');
-  _editPhotos={};
+  hideLoader();
+  closeModal('moEdit');
+  _editNewPhotos = {};
   renderDashboard();
   renderDaftar();
-
-  // Sync ke Firebase background
-  if(window._fbOk&&window._db){
-    try{
-      const{doc,updateDoc}=window._fb;
-      const upd={tanggal:tgl,keterangan:ket,hari:getHari(tgl)};
-      if(hasNewPhotos)upd.schools=updatedSchools;
-      await updateDoc(doc(window._db,'surat_jalan',_editId),upd);
-    }catch(e){console.warn('Edit Firebase:',e.message)}
-  }
 }
 
-// ══ KOP SURAT — hanya di halaman pertama ══
-function buildKopSurat(d){
-  return`<div class="kop-surat">
+// ════════════════════════════════════════════════════
+//  BUILD A4 PAGES
+// ════════════════════════════════════════════════════
+function buildKopSurat(d) {
+  return `
+  <div class="kop-wrap">
     <div class="kop-logo">
-      <div class="kop-logo-circle">
-        <svg width="38" height="38" viewBox="0 0 100 100" fill="none">
-          <circle cx="50" cy="50" r="48" fill="#071e49" stroke="#c9960a" stroke-width="4"/>
-          <text x="50" y="42" text-anchor="middle" fill="#fff" font-size="14" font-weight="800" font-family="serif">SPPG</text>
-          <text x="50" y="56" text-anchor="middle" fill="#c9960a" font-size="9" font-family="serif">MULIA 2</text>
-          <text x="50" y="68" text-anchor="middle" fill="#fff" font-size="7" font-family="sans-serif">BANDA ACEH</text>
-        </svg>
-      </div>
+      <div class="kl1">SPPG</div>
+      <div class="kl2">MULIA 2</div>
     </div>
     <div class="kop-text">
-      <div class="kop-instansi">PEMERINTAH KOTA BANDA ACEH</div>
-      <div class="kop-unit">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
-      <div class="kop-nama">SPPG KUTA ALAM MULIA 2</div>
-      <div class="kop-alamat">Jl. Kuta Alam, Banda Aceh · Telp. — · Kode Pos 23125</div>
+      <div class="kt1">PEMERINTAH KOTA BANDA ACEH</div>
+      <div class="kt2">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+      <div class="kt3">SPPG KUTA ALAM MULIA 2</div>
+      <div class="kt4">Kuta Alam, Banda Aceh &nbsp;·&nbsp; Kode Pos 23125</div>
     </div>
   </div>
-  <div class="kop-line"></div>
-  <div class="kop-judul">
-    <div class="kop-judul-title">DOKUMENTASI DISTRIBUSI SPPG</div>
-    <div class="kop-judul-sub">Kuta Alam Mulia 2 — Banda Aceh</div>
-    <div class="kop-judul-tgl">${fmtTgl(d.tanggal)}${d.keterangan?' &nbsp;·&nbsp; '+d.keterangan:''}</div>
+  <div class="kop-divider"></div>
+  <div class="kop-subtitle">
+    <div class="ks1">Dokumentasi Distribusi SPPG</div>
+    <div class="ks2">${formatDate(d.tanggal)}${d.keterangan ? ' &nbsp;·&nbsp; ' + d.keterangan : ''}</div>
   </div>`;
 }
 
-// ══ BUILD A4 PAGES — kop hanya halaman 1, A4 benar ══
-async function buildA4Pages(d){
-  const allSch=d.schools||[];
-  // Saring hanya sekolah yang ada fotonya
-  const withPhoto=allSch.filter(s=>(s.photos||[]).some(p=>p&&p.url));
-  const perPage=5; const pages=[];
-  for(let i=0;i<withPhoto.length;i+=perPage) pages.push(withPhoto.slice(i,i+perPage));
-  if(!pages.length) pages.push([]);
+function buildA4Pages(d) {
+  const schoolsWithPhotos = (d.schools || []).filter(s => (s.photos || []).some(p => p && p.url));
+  const PER_PAGE = 5;
+  const pages = [];
+  for (let i = 0; i < schoolsWithPhotos.length; i += PER_PAGE) {
+    pages.push(schoolsWithPhotos.slice(i, i + PER_PAGE));
+  }
+  if (!pages.length) pages.push([]);
 
-  return pages.map((chunk,pi)=>`
+  return pages.map((chunk, pi) => `
     <div class="a4-page">
-      ${pi===0 ? buildKopSurat(d) : `
-      <div class="a4-hdr-simple">
-        <span class="a4-hdr-s1">DOKUMENTASI DISTRIBUSI SPPG — Kuta Alam Mulia 2</span>
-        <span class="a4-hdr-s2">${fmtTgl(d.tanggal)} · Hal ${pi+1}/${pages.length}</span>
-      </div>`}
+      ${pi === 0
+        ? buildKopSurat(d)
+        : `<div class="pg2-header">
+             <span class="ph1">Dokumentasi Distribusi SPPG — Kuta Alam Mulia 2</span>
+             <span class="ph2">${formatDate(d.tanggal)} · Hal ${pi+1}/${pages.length}</span>
+           </div>`
+      }
       <div class="a4-schools">
-        ${chunk.map(s=>{
-          const photos=(s.photos||[]).filter(p=>p&&p.url);
-          if(!photos.length) return '';
-          const info=SCHOOLS.find(x=>x.name===s.name)||{};
-          const cols=photos.map(p=>{
-            const pd=new Date((p.tgl||d.tanggal)+'T00:00:00');
-            const dd=pd.getDate().toString().padStart(2,'0');
-            const mm=(pd.getMonth()+1).toString().padStart(2,'0');
-            const yy=pd.getFullYear().toString().substring(2);
-            const ts=`${dd}/${mm}/${yy}${p.jam?', '+p.jam:''}`;
-            const loc=`Banda Aceh, Aceh\nIndonesia\n${p.kel||info.kel||'Kuta Alam'}`;
-            return`<div class="a4-photo-box">
+        ${chunk.map(school => {
+          const photos = (school.photos || []).filter(p => p && p.url);
+          if (!photos.length) return '';
+          const info = SCHOOLS.find(s => s.name === school.name) || {};
+          const photoCols = photos.map(p => {
+            const pd = new Date((p.tgl || d.tanggal) + 'T00:00:00');
+            const dd = pd.getDate().toString().padStart(2,'0');
+            const mm = (pd.getMonth()+1).toString().padStart(2,'0');
+            const yy = pd.getFullYear().toString().substring(2);
+            const tsLine1 = `${dd}/${mm}/${yy}${p.jam ? ', ' + p.jam : ''}`;
+            const tsLine2 = `Banda Aceh, Aceh\nIndonesia\n${p.kel || info.kel || 'Kuta Alam'}`;
+            return `<div class="a4-photo-box">
               <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block">
               <div class="a4-ts">
-                <span class="ts-d">${ts}</span>
-                <span class="ts-l" style="white-space:pre-line">${loc}</span>
+                <span class="d">${tsLine1}</span>
+                <span class="l" style="white-space:pre-line">${tsLine2}</span>
               </div>
             </div>`;
           }).join('');
-          const grid=photos.length===1?'1fr':'1fr 1fr';
-          return`<div class="a4-sch-row">
-            <div class="a4-sch-label">${s.name}</div>
-            <div class="a4-sch-photos" style="grid-template-columns:${grid}">${cols}</div>
+          const gridCols = photos.length === 1 ? '1fr' : '1fr 1fr';
+          return `<div class="a4-row">
+            <div class="a4-school-name">${school.name}</div>
+            <div class="a4-photos-wrap" style="grid-template-columns:${gridCols}">${photoCols}</div>
           </div>`;
         }).join('')}
       </div>
@@ -1221,161 +1657,150 @@ async function buildA4Pages(d){
   ).join('');
 }
 
-// ══ CSS untuk PDF/Print ══
-function getPdfCSS(){
-  return`
+// ════════════════════════════════════════════════════
+//  PRINT / PDF
+// ════════════════════════════════════════════════════
+let _printId = null;
+
+async function openPrint(id) {
+  _printId = id;
+  const docs = await getAllDocs();
+  const d = docs.find(x => x.id === id || x.fbId === id);
+  if (!d) { toast('Data tidak ditemukan', true); return; }
+
+  document.getElementById('printPreview').innerHTML = buildA4Pages(d);
+  openModal('moPrint');
+  markPrinted(id);
+}
+
+function doPrint() {
+  const pa = document.getElementById('print-area');
+  pa.innerHTML = document.getElementById('printPreview').innerHTML;
+  pa.style.display = 'block';
+  window.print();
+  setTimeout(() => { pa.innerHTML = ''; pa.style.display = 'none'; }, 3000);
+}
+
+async function doPDF() {
+  const docs = await getAllDocs();
+  const d = docs.find(x => x.id === _printId || x.fbId === _printId);
+  if (!d) { toast('Data tidak ditemukan', true); return; }
+
+  const pages = buildA4Pages(d);
+
+  const pdfCSS = `
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#e8e8e8;padding:16px}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#ddd;padding:14px}
+.no-print{max-width:794px;margin:0 auto 12px;background:#071e49;color:#fff;padding:11px 18px;border-radius:7px;font-size:12.5px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
 @media print{
   body{background:#fff;padding:0}
+  .no-print{display:none}
   @page{size:210mm 297mm;margin:0}
-  .a4-page{box-shadow:none!important;margin:0!important;border-radius:0!important;
-    width:210mm!important;min-height:297mm!important;padding:12mm 14mm 14mm!important;
-    page-break-after:always;break-after:page}
+  .a4-page{box-shadow:none!important;border-radius:0!important;margin:0!important;
+    width:210mm!important;padding:12mm 14mm!important;min-height:297mm!important;
+    page-break-after:always!important;break-after:page!important}
 }
-/* A4 PAGE */
-.a4-page{
-  width:794px;min-height:1122px;background:#fff;
-  padding:28px 36px 32px;margin:0 auto 16px;
-  box-shadow:0 4px 24px rgba(0,0,0,.18);border-radius:4px;
-  position:relative;
-}
-/* KOP SURAT */
-.kop-surat{display:flex;align-items:center;gap:16px;margin-bottom:6px}
-.kop-logo-circle{width:56px;height:56px;flex-shrink:0}
-.kop-logo-circle svg{width:56px;height:56px}
+.a4-page{width:794px;background:#fff;padding:28px 36px;margin:0 auto 14px;box-shadow:0 4px 20px rgba(0,0,0,.15);border-radius:3px;font-family:'Segoe UI',system-ui,sans-serif}
+.kop-wrap{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+.kop-logo{width:56px;height:56px;flex-shrink:0;background:#071e49;border-radius:50%;border:3px solid #e8a020;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.kl1{font-size:11px;font-weight:900;color:#fff;line-height:1.1;text-align:center}
+.kl2{font-size:7px;color:#e8a020;font-weight:700}
 .kop-text{flex:1;text-align:center}
-.kop-instansi{font-size:10px;font-weight:600;color:#444;letter-spacing:.3px}
-.kop-unit{font-size:11px;font-weight:700;color:#222;margin-top:1px}
-.kop-nama{font-size:16px;font-weight:900;color:#071e49;letter-spacing:.5px;margin-top:2px;text-transform:uppercase}
-.kop-alamat{font-size:8.5px;color:#666;margin-top:3px}
-.kop-line{border:none;border-top:3px solid #071e49;margin:8px 0 4px;border-bottom:1px solid #c9960a}
-.kop-judul{text-align:center;margin-bottom:12px;padding-bottom:6px;border-bottom:1px dashed #c8d8ee}
-.kop-judul-title{font-size:12px;font-weight:800;color:#071e49;letter-spacing:.6px;text-transform:uppercase}
-.kop-judul-sub{font-size:9.5px;font-weight:600;color:#333;margin-top:2px}
-.kop-judul-tgl{font-size:9px;color:#5a6d8a;margin-top:3px}
-/* HEADER SIMPLE (halaman 2+) */
-.a4-hdr-simple{
-  display:flex;justify-content:space-between;align-items:center;
-  padding-bottom:7px;margin-bottom:10px;
-  border-bottom:2px solid #071e49;
-}
-.a4-hdr-s1{font-size:9px;font-weight:800;color:#071e49;text-transform:uppercase;letter-spacing:.4px}
-.a4-hdr-s2{font-size:8.5px;color:#5a6d8a}
-/* SCHOOLS */
-.a4-schools{display:flex;flex-direction:column;gap:7px}
-.a4-sch-row{display:flex;align-items:stretch;gap:7px;padding-bottom:7px;border-bottom:1px solid #eaeeea}
-.a4-sch-row:last-child{border-bottom:none;padding-bottom:0}
-.a4-sch-label{
-  width:100px;flex-shrink:0;display:flex;align-items:center;
-  font-size:7.5px;font-weight:800;color:#071e49;
-  padding:4px 6px;background:#dce8f8;border-radius:5px;
-  border-left:3px solid #071e49;line-height:1.35
-}
-.a4-sch-photos{flex:1;display:grid;gap:6px}
-.a4-photo-box{
-  position:relative;aspect-ratio:4/3;border-radius:5px;
-  overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee
-}
+.kt1{font-size:9.5px;font-weight:600;color:#555}
+.kt2{font-size:10.5px;font-weight:700;color:#222;margin-top:1px}
+.kt3{font-size:15px;font-weight:900;color:#071e49;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.kt4{font-size:8px;color:#777;margin-top:2px}
+.kop-divider{height:3px;background:#071e49;margin:7px 0 2px}
+.kop-divider::after{content:'';display:block;height:1px;background:#e8a020;margin-top:2px}
+.kop-subtitle{text-align:center;padding:7px 0 9px;border-bottom:1px dashed #c8d8ee}
+.ks1{font-size:11.5px;font-weight:800;color:#071e49;text-transform:uppercase;letter-spacing:.5px}
+.ks2{font-size:9px;color:#5a6d8a;margin-top:2px}
+.pg2-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:7px;margin-bottom:10px;border-bottom:2px solid #071e49}
+.ph1{font-size:8.5px;font-weight:700;color:#071e49;text-transform:uppercase}
+.ph2{font-size:8px;color:#5a6d8a}
+.a4-schools{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.a4-row{display:flex;align-items:stretch;gap:7px;padding-bottom:7px;border-bottom:1px solid #eaeeea}
+.a4-row:last-child{border-bottom:none;padding-bottom:0}
+.a4-school-name{width:98px;flex-shrink:0;display:flex;align-items:center;font-size:7.5px;font-weight:800;color:#071e49;padding:4px 6px;background:#dce8f8;border-radius:5px;border-left:3px solid #071e49;line-height:1.35}
+.a4-photos-wrap{flex:1;display:grid;gap:6px}
+.a4-photo-box{position:relative;aspect-ratio:4/3;border-radius:5px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee}
 .a4-photo-box img{width:100%;height:100%;object-fit:cover;display:block}
-.a4-ts{position:absolute;top:4px;right:5px;text-align:right;
-  font-family:'Courier New',Courier,monospace;line-height:1.4;pointer-events:none}
-.ts-d{display:block;font-size:7px;font-weight:400;color:#fff;
-  letter-spacing:.3px;text-shadow:1px 1px 2px rgba(0,0,0,.95)}
-.ts-l{display:block;font-size:5.5px;font-weight:400;color:#fff;
-  letter-spacing:.2px;text-shadow:1px 1px 2px rgba(0,0,0,.95);white-space:pre-line}
-`;
-}
+.a4-ts{position:absolute;top:4px;right:5px;text-align:right;font-family:'Courier New',Courier,monospace;line-height:1.4;pointer-events:none}
+.a4-ts .d{display:block;font-size:7px;color:#fff;letter-spacing:.3px;text-shadow:1px 1px 2px rgba(0,0,0,.95)}
+.a4-ts .l{display:block;font-size:5.5px;color:#fff;letter-spacing:.2px;text-shadow:1px 1px 2px rgba(0,0,0,.95);white-space:pre-line}
+  `;
 
-// ══ DOWNLOAD PDF — buka window baru, Ctrl+P → Save as PDF ══
-async function doSavePDF(){
-  const docs=await fetchDocs();
-  const d=docs.find(x=>x.id===_printId);
-  if(!d){toast('Data tidak ditemukan',true);return}
-
-  toast('Membuat PDF...');
-  const pages=await buildA4Pages(d);
-  const css=getPdfCSS();
-
-  const html=`<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <title>SPPG_Mulia2_${d.tanggal}</title>
-<style>${css}</style>
+<style>${pdfCSS}</style>
 </head>
 <body>
-<div style="max-width:794px;margin:0 auto 14px;background:#071e49;color:#fff;padding:11px 18px;border-radius:6px;font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:space-between" class="no-print">
-  <span>📄 SPPG Mulia 2 — ${fmtTgl(d.tanggal)}</span>
-  <span style="font-size:11px;opacity:.8">Tekan Ctrl+P → Pilih "Save as PDF" → Klik Save</span>
+<div class="no-print">
+  <span>📄 SPPG Mulia 2 — ${formatDate(d.tanggal)}</span>
+  <span style="font-size:11px;opacity:.75">Ctrl+P → Destination: Save as PDF → Save</span>
 </div>
-<style>@media print{.no-print{display:none!important}}</style>
 ${pages}
 </body>
 </html>`;
 
-  // Buka di tab baru — browser akan print/save ke PDF
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const win=window.open(url,'_blank');
-  if(!win){
-    // Fallback: download file
-    const a=document.createElement('a');
-    a.href=url; a.download=`SPPG_Mulia2_${d.tanggal}.html`; a.click();
-    toast('File dibuka — tekan Ctrl+P untuk simpan PDF ✓');
-  } else {
-    // Auto trigger print dialog setelah halaman load
-    win.onload=()=>{
-      setTimeout(()=>{win.focus();win.print();},600);
-    };
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (win) {
+    win.onload = () => setTimeout(() => { win.focus(); win.print(); }, 600);
     toast('Pilih "Save as PDF" di dialog print ✓');
+  } else {
+    // Popup blocked fallback
+    const a = document.createElement('a');
+    a.href = url; a.download = `SPPG_Mulia2_${d.tanggal}.html`; a.click();
+    toast('File diunduh — buka dan tekan Ctrl+P ✓');
   }
-  setTimeout(()=>URL.revokeObjectURL(url),30000);
-  markPrinted(_printId);
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
-// ══ PRINT (via browser print dialog) ══
-let _printId=null;
-async function openPrint(id){
-  _printId=id;
-  const docs=await fetchDocs();
-  const d=docs.find(x=>x.id===id||x.fbId===id);
-  if(!d){toast('Data tidak ditemukan',true);return}
-  const html=await buildA4Pages(d);
-  // Inject CSS ke preview dalam modal
-  document.getElementById('pmBody').innerHTML=
-    `<style>${getPdfCSS()}.a4-page{margin:0 auto 14px;min-height:auto}</style>`+html;
-  openMo('moPrint');
-}
-function doPrint(){
-  // Buka di tab baru dan print
-  doSavePDF();
-}
-  try{
-    const local=getLocal();
-    const idx=local.findIndex(d=>d.id===id);
-    if(idx>-1){local[idx].printed=true;setLocal(local)}
-    if(window._fbOk&&window._db){
-      const{doc,updateDoc}=window._fb;
-      updateDoc(doc(window._db,'surat_jalan',id),{printed:true}).catch(()=>{});
-    }
-    setTimeout(()=>{renderDashboard();renderDaftar()},200);
-  }catch{}
+async function markPrinted(id) {
+  try {
+    const local = getLocal();
+    const idx = local.findIndex(d => d.id === id);
+    if (idx > -1) { local[idx].printed = true; setLocal(local); }
+    fbUpdate(id, { printed: true });
+    setTimeout(() => { renderDashboard(); renderDaftar(); }, 200);
+  } catch {}
 }
 
-// ══ INIT ══
-async function init(){
-  const now=new Date();
-  document.getElementById('tbDate').textContent=`${HARI[now.getDay()]}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`;
-  const tm=now.toISOString().substring(0,7);
-  document.getElementById('fMonth').value=tm;
-  document.getElementById('fDaftar').value=tm;
-  document.getElementById('inTgl').value=todayStr();
+// ════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════
+function init() {
+  // Set today's date display
+  const now = new Date();
+  const dateStr = `${HARI[now.getDay()]}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`;
+  setEl('topDate', dateStr);
+
+  // Set month filters to current month
+  const ym = now.toISOString().substring(0, 7);
+  const filterDash   = document.getElementById('filterDash');
+  const filterDaftar = document.getElementById('filterDaftar');
+  if (filterDash)   filterDash.value   = ym;
+  if (filterDaftar) filterDaftar.value = ym;
+
+  // Set default date
+  document.getElementById('inTgl').value = todayStr();
+
+  // Build schools UI
   buildSchoolsUI();
-  checkFbStatus();
-  await autoClean();
+
+  // Auto-clean old data
+  autoClean();
+
+  // Render dashboard
   renderDashboard();
 }
+
+// Start
 init();
 </script>
 </body>
