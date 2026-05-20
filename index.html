@@ -1606,8 +1606,8 @@ async function confirmEdit() {
       }
 
       setLocal(local);
-      invalidateCache(); update
-      const hasChanges = Object.keys(_editNewPhotos).length > 0 || Object.keys(_editDeletedPhotos).length > 0;
+      invalidateCache();
+      const hasChanges = Object.keys(_editNewPhotos).length > 0 || Object.keys(_editDeletedPhotos).length > 0 || true;
       const updateData = { tanggal: tgl, keterangan: ket, hari: getDayName(tgl) };
       if (hasChanges) updateData.schools = local[idx].schools;
       fbUpdate(local[idx].fbId || _editId, updateData);
