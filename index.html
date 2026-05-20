@@ -485,18 +485,12 @@ input[type=month] {
 .kop-text .kt4 { font-size: 8px; color: #777; margin-top: 2px; }
 .kop-divider {
   height: 3px; background: var(--navy);
-  margin: 7px 0 2px;
+  margin: 7px 0 0;
 }
 .kop-divider::after {
   content: ''; display: block;
   height: 1px; background: var(--gold); margin-top: 2px;
 }
-.kop-subtitle { text-align: center; padding: 7px 0 9px; border-bottom: 1px dashed #c8d8ee; }
-.kop-subtitle .ks1 {
-  font-size: 11.5px; font-weight: 800; color: var(--navy);
-  text-transform: uppercase; letter-spacing: .5px;
-}
-.kop-subtitle .ks2 { font-size: 9px; color: var(--muted); margin-top: 2px; }
 
 /* Page 2+ header */
 .pg2-header {
@@ -1623,16 +1617,14 @@ async function confirmEdit() {
 // ════════════════════════════════════════════════════
 function buildKopSurat(d) {
   return `
-  <div style="text-align:center;margin-bottom:6px">
-    <div class="kt1">PEMERINTAH KOTA BANDA ACEH</div>
-    <div class="kt2">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
-    <div class="kt3">SPPG KUTA ALAM MULIA 2</div>
-    <div class="kt4">Kuta Alam, Banda Aceh &nbsp;·&nbsp; Kode Pos 23125</div>
+  <div style="text-align:center;margin-bottom:4px">
+    <div style="font-size:16px;font-weight:900;color:#071e49;letter-spacing:.3px">SPPG Banda Aceh Kuta Alam Mulia 2</div>
+    <div style="font-size:8.5px;color:#555;margin-top:4px">Jl. Teungku Di Blang No.Kel, Mulia, Kec. Kuta Alam, Kota Banda Aceh, Aceh 23123</div>
   </div>
   <div class="kop-divider"></div>
-  <div class="kop-subtitle">
-    <div class="ks1">Dokumentasi Distribusi SPPG</div>
-    <div class="ks2">${formatDate(d.tanggal)}${d.keterangan ? ' &nbsp;·&nbsp; ' + d.keterangan : ''}</div>
+  <div style="text-align:center;padding:6px 0 10px">
+    <div style="font-size:12px;font-weight:800;color:#071e49;text-transform:uppercase;letter-spacing:.5px">Dokumentasi Distribusi</div>
+    <div style="font-size:9px;color:#5a6d8a;margin-top:3px">${formatDate(d.tanggal)}</div>
   </div>`;
 }
 
@@ -1744,12 +1736,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#ddd;padding:14px}
 .kt1{font-size:9.5px;font-weight:600;color:#555;text-align:center}
 .kt2{font-size:10.5px;font-weight:700;color:#222;margin-top:1px;text-align:center}
 .kt3{font-size:15px;font-weight:900;color:#071e49;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;text-align:center}
-.kt4{font-size:8px;color:#777;margin-top:2px;text-align:center}
-.kop-divider{height:3px;background:#071e49;margin:7px 0 2px}
+.kt4{font-size:8px;color:#777;margin-top:2px;text-align:center}.kop-divider{height:3px;background:#071e49;margin:7px 0 0}
 .kop-divider::after{content:'';display:block;height:1px;background:#e8a020;margin-top:2px}
-.kop-subtitle{text-align:center;padding:7px 0 9px;border-bottom:1px dashed #c8d8ee}
-.ks1{font-size:11.5px;font-weight:800;color:#071e49;text-transform:uppercase;letter-spacing:.5px}
-.ks2{font-size:9px;color:#5a6d8a;margin-top:2px}
 .pg2-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:7px;margin-bottom:10px;border-bottom:2px solid #071e49}
 .ph1{font-size:8.5px;font-weight:700;color:#071e49;text-transform:uppercase}
 .ph2{font-size:8px;color:#5a6d8a}
