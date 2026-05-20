@@ -344,18 +344,12 @@ input[type=month] {
 }
 .photo-slot.has-photo .ts-overlay { display: block; }
 .ts-overlay .ts-line1 {
-  display: block; font-size: 8px; font-weight: 700;
-  color: #fff;
-  background: rgba(0,0,0,.45);
-  padding: 1px 3px; border-radius: 2px;
-  letter-spacing: .2px;
+  display: block; font-size: 8px; font-weight: 800;
+  color: #fff; letter-spacing: .2px;
 }
 .ts-overlay .ts-line2 {
   display: block; font-size: 7px; font-weight: 700;
-  color: #fff;
-  background: rgba(0,0,0,.45);
-  padding: 1px 3px; border-radius: 2px;
-  white-space: pre-line; line-height: 1.4; margin-top: 1px;
+  color: #fff; white-space: pre-line; line-height: 1.4; margin-top: 1px;
 }
 
 /* Photo settings panel */
@@ -1477,6 +1471,7 @@ async function openEdit(id) {
         ${[0, 1].map(sl => {
           const p = (school.photos || [])[sl];
           const hasImg = p && p.url;
+          const currentJam = p && p.jam ? p.jam : '';
           return `<div>
             <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">${SLOT_LABELS[sl]}</div>
             <div id="eslot-${si}-${sl}" style="aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:var(--ltr);border:1.5px dashed var(--border);position:relative">
@@ -1491,14 +1486,17 @@ async function openEdit(id) {
                    </div>`
               }
               ${hasImg ? `
-              <!-- Tombol GANTI (bawah) -->
-              <div onclick="trigEditFile(${si},${sl})" style="position:absolute;bottom:0;left:0;right:${hasImg?'30px':'0'};background:rgba(7,30,73,.6);color:#fff;font-size:9px;text-align:center;padding:4px;cursor:pointer">
+              <div onclick="trigEditFile(${si},${sl})" style="position:absolute;bottom:0;left:0;right:30px;background:rgba(7,30,73,.6);color:#fff;font-size:9px;text-align:center;padding:4px;cursor:pointer">
                 ↑ Ganti
               </div>
-              <!-- Tombol HAPUS (pojok kanan bawah) -->
               <button onclick="deleteEditPhoto(${si},${sl})" style="position:absolute;bottom:0;right:0;width:30px;background:rgba(214,48,49,.85);color:#fff;border:none;font-size:13px;padding:3px 0;cursor:pointer;height:24px;display:flex;align-items:center;justify-content:center" title="Hapus foto">×</button>
               ` : ''}
             </div>
+            ${hasImg ? `
+            <div style="margin-top:5px;display:flex;align-items:center;gap:5px">
+              <label style="font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap">⏰ Jam:</label>
+              <input type="time" id="ejam-${si}-${sl}" value="${currentJam}" class="ps-input" style="flex:1;padding:4px 7px;border-radius:6px;border:1.5px solid var(--border);font-size:11px;font-family:inherit;background:#fff">
+            </div>` : ''}
           </div>`;
         }).join('')}
       </div>`;
@@ -1575,6 +1573,16 @@ async function confirmEdit() {
           local[idx].schools[si].photos[sl] = null;
         }
       });
+
+      // Handle jam yang DIEDIT (tanpa ganti foto)
+      for (let si = 0; si < (local[idx].schools || []).length; si++) {
+        for (let sl = 0; sl < 2; sl++) {
+          const jamEl = document.getElementById(`ejam-${si}-${sl}`);
+          if (jamEl && local[idx].schools[si]?.photos?.[sl]) {
+            local[idx].schools[si].photos[sl].jam = jamEl.value;
+          }
+        }
+      }
 
       // Handle foto yang DIGANTI/BARU
       if (Object.keys(_editNewPhotos).length > 0) {
@@ -1982,8 +1990,8 @@ function buildPageHTML(chunk, pi, totalPages, d) {
       return `<div style="flex:1;height:${photoH}px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee;position:relative;min-width:0">
         <img src="${p.url}" data-crop="true" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block">
         <div style="position:absolute;top:3px;right:4px;text-align:right;font-family:'Courier New',monospace;line-height:1.5">
-          <span style="display:block;font-size:8px;font-weight:700;color:#ffffff;background:rgba(0,0,0,.45);padding:1px 3px;border-radius:2px;letter-spacing:.2px">${ts1}</span>
-          <span style="display:block;font-size:7px;font-weight:700;color:#ffffff;background:rgba(0,0,0,.45);padding:1px 3px;border-radius:2px;white-space:pre-line;line-height:1.4;margin-top:1px">${ts2}</span>
+          <span style="display:block;font-size:8px;font-weight:800;color:#ffffff;letter-spacing:.2px">${ts1}</span>
+          <span style="display:block;font-size:7px;font-weight:700;color:#ffffff;white-space:pre-line;line-height:1.4;margin-top:1px">${ts2}</span>
         </div>
       </div>`;
     };
