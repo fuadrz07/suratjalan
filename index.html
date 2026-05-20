@@ -335,41 +335,7 @@ input[type=month] {
 .photo-slot.has-photo .slot-remove { display: flex; }
 .photo-slot.has-photo .slot-placeholder { display: none; }
 
-/* Timestamp overlay */
-.ts-overlay {
-  position: absolute; top: 5px; right: 6px;
-  text-align: right; display: none;
-  pointer-events: none;
-  font-family: 'Courier New', monospace; line-height: 1.4;
-}
-.photo-slot.has-photo .ts-overlay { display: block; }
-.ts-overlay .ts-line1 {
-  display: block; font-size: 8px; font-weight: 800;
-  color: #fff; letter-spacing: .2px;
-}
-.ts-overlay .ts-line2 {
-  display: block; font-size: 7px; font-weight: 700;
-  color: #fff; white-space: pre-line; line-height: 1.4; margin-top: 1px;
-}
-
-/* Photo settings panel */
-.photo-settings {
-  background: var(--ltr); border: 1px solid var(--border);
-  border-radius: 8px; padding: 8px 10px;
-  display: none;
-}
-.photo-settings.show { display: block; }
-.ps-row {
-  display: flex; gap: 6px; align-items: center; margin-bottom: 4px;
-}
-.ps-row:last-child { margin: 0; }
-.ps-row label { font-size: 10px; font-weight: 700; color: var(--muted); min-width: 34px; flex-shrink: 0; }
-.ps-input {
-  flex: 1; padding: 4px 8px; border-radius: 6px;
-  border: 1.5px solid var(--border);
-  font-size: 11px; font-family: inherit; background: #fff;
-}
-.ps-input:focus { outline: none; border-color: var(--blue); }
+/* Photo settings - removed */
 
 /* =========================================================
    TOAST
@@ -893,20 +859,20 @@ try {
 //  CONSTANTS
 // ════════════════════════════════════════════════════
 const SCHOOLS = [
-  { name: "TK/RA Purwanida",                     maps: "https://maps.app.goo.gl/JaggRy7bVrM8wVwL8", kel: "Lambaro Skep" },
-  { name: "TK Negeri 3",                          maps: "https://maps.app.goo.gl/HWbkTLeZMtDnBizg7", kel: "Lambaro Skep" },
-  { name: "Paud Sinyak Metuah",                   maps: "https://maps.app.goo.gl/ZES2Qdt219rTqmqf7", kel: "Kuta Alam"    },
-  { name: "SD 32 Banda Aceh",                     maps: "https://maps.app.goo.gl/hx3JjTdbL5fnYDuZ7", kel: "Kuta Alam"    },
-  { name: "SD 36 Banda Aceh",                     maps: "https://maps.app.goo.gl/fDXh8iAy9MXWffZi8", kel: "Kuta Alam"    },
-  { name: "MTS Darul 'Ulum YPUI",                 maps: "https://maps.app.goo.gl/CyUikRRnmb6PUPyN8", kel: "Kuta Alam"    },
-  { name: "SMP Islam Darul 'Ulum YPUI",           maps: "https://maps.app.goo.gl/zjL9QzCF9fe6DMvF8", kel: "Kuta Alam"    },
-  { name: "MA Darul 'Ulum YPUI",                  maps: "https://maps.app.goo.gl/5QihsyeqpLU2DoYx8", kel: "Kuta Alam"    },
-  { name: "MTS 1 Banda Aceh",                     maps: "https://maps.app.goo.gl/Ex5RWZTRzebdVc7j7", kel: "Kuta Alam"    }
+  { name: "TK/RA Purwanida"                     },
+  { name: "TK Negeri 3"                          },
+  { name: "Paud Sinyak Metuah"                   },
+  { name: "SD 32 Banda Aceh"                     },
+  { name: "SD 36 Banda Aceh"                     },
+  { name: "MTS Darul 'Ulum YPUI"                 },
+  { name: "SMP Islam Darul 'Ulum YPUI"           },
+  { name: "MA Darul 'Ulum YPUI"                  },
+  { name: "MTS 1 Banda Aceh"                     }
 ];
 
 const HARI  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-const SLOT_LABELS = ['📦 Pengantaran', '✅ Pengambilan'];
+const SLOT_LABELS = ['Pengantaran', 'Pengambilan'];
 
 // ════════════════════════════════════════════════════
 //  LOCAL STORAGE
@@ -1078,10 +1044,6 @@ function formatDate(s) {
 function getDayName(s) { return HARI[new Date(s + 'T00:00:00').getDay()]; }
 function getYearMonth(s) { return s.substring(0, 7); }
 function todayStr() { return new Date().toISOString().substring(0, 10); }
-function nowTime() {
-  const d = new Date();
-  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
-}
 
 // ════════════════════════════════════════════════════
 //  INPUT TOGGLE
@@ -1115,9 +1077,6 @@ function buildSchoolsUI() {
             <h4>${school.name}</h4>
             <span class="photo-count" id="cnt-${si}">0/2</span>
           </div>
-          <div class="school-meta">
-            <a href="${school.maps}" target="_blank" onclick="event.stopPropagation()" style="color:var(--blue)">📍 Lihat Maps</a>
-          </div>
         </div>
         <svg class="chevron" id="chev-${si}" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M6 9l6 6 6-6"/>
@@ -1127,7 +1086,6 @@ function buildSchoolsUI() {
         <div class="slots-grid">
           ${[0, 1].map(sl => `
           <div class="slot-wrap">
-            <div class="slot-label-txt">${SLOT_LABELS[sl]}</div>
             <div class="photo-slot" id="slot-${si}-${sl}" onclick="triggerFile(${si},${sl})">
               <input type="file" accept="image/*" id="file-${si}-${sl}" onchange="onFileSelect(event,${si},${sl})">
               <div class="slot-placeholder">
@@ -1139,21 +1097,7 @@ function buildSchoolsUI() {
                 <span>Tap untuk upload</span>
               </div>
               <img id="img-${si}-${sl}" src="" style="display:none">
-              <div class="ts-overlay" id="tso-${si}-${sl}">
-                <span class="ts-line1" id="ts1-${si}-${sl}"></span>
-                <span class="ts-line2" id="ts2-${si}-${sl}"></span>
-              </div>
               <button class="slot-remove" onclick="removePhoto(event,${si},${sl})">×</button>
-            </div>
-            <div class="photo-settings" id="pset-${si}-${sl}">
-              <div class="ps-row">
-                <label>⏰ Jam</label>
-                <input type="time" class="ps-input" id="pj-${si}-${sl}" oninput="updateTimestamp(${si},${sl})">
-              </div>
-              <div class="ps-row">
-                <label>📍 Area</label>
-                <input type="text" class="ps-input" id="pk-${si}-${sl}" value="${school.kel}" oninput="updateTimestamp(${si},${sl})">
-              </div>
             </div>
           </div>`).join('')}
         </div>
@@ -1174,55 +1118,13 @@ function triggerFile(si, sl) {
 function onFileSelect(e, si, sl) {
   const file = e.target.files[0];
   if (!file) return;
-
-  const jam = nowTime();
-  const kel = SCHOOLS[si].kel;
   const objUrl = URL.createObjectURL(file);
-
-  // Set input defaults
-  document.getElementById(`pj-${si}-${sl}`).value = jam;
-  document.getElementById(`pk-${si}-${sl}`).value = kel;
-
-  // Show image
   const imgEl = document.getElementById(`img-${si}-${sl}`);
-  imgEl.src = objUrl;
-  imgEl.style.display = 'block';
-
-  // Add class
-  const slotEl = document.getElementById(`slot-${si}-${sl}`);
-  slotEl.classList.add('has-photo');
-
-  // Show settings
-  document.getElementById(`pset-${si}-${sl}`).classList.add('show');
-
-  // Save data
-  const tgl = document.getElementById('inTgl').value || todayStr();
+  imgEl.src = objUrl; imgEl.style.display = 'block';
+  document.getElementById(`slot-${si}-${sl}`).classList.add('has-photo');
   if (photoData[si][sl]?.objUrl) URL.revokeObjectURL(photoData[si][sl].objUrl);
-  photoData[si][sl] = { file, objUrl, tgl, jam, kel, si, sl };
-
-  updateTimestamp(si, sl);
+  photoData[si][sl] = { file, objUrl, si, sl };
   updateCount(si);
-}
-
-function updateTimestamp(si, sl) {
-  const tgl = document.getElementById('inTgl').value || todayStr();
-  const jam = document.getElementById(`pj-${si}-${sl}`).value;
-  const kel = document.getElementById(`pk-${si}-${sl}`).value;
-
-  if (photoData[si][sl]) {
-    photoData[si][sl].tgl = tgl;
-    photoData[si][sl].jam = jam;
-    photoData[si][sl].kel = kel;
-  }
-
-  const d = new Date(tgl + 'T00:00:00');
-  const dd = d.getDate().toString().padStart(2,'0');
-  const mm = (d.getMonth()+1).toString().padStart(2,'0');
-  const yy = d.getFullYear().toString().substring(2);
-  const ts = `${dd}/${mm}/${yy}${jam ? ', ' + jam : ''}`;
-
-  setEl(`ts1-${si}-${sl}`, ts);
-  setEl(`ts2-${si}-${sl}`, `Banda Aceh, Aceh\nIndonesia\n${kel}`);
 }
 
 function removePhoto(e, si, sl) {
@@ -1231,10 +1133,8 @@ function removePhoto(e, si, sl) {
   photoData[si][sl] = null;
   document.getElementById(`slot-${si}-${sl}`).classList.remove('has-photo');
   const imgEl = document.getElementById(`img-${si}-${sl}`);
-  imgEl.src = '';
-  imgEl.style.display = 'none';
+  imgEl.src = ''; imgEl.style.display = 'none';
   document.getElementById(`file-${si}-${sl}`).value = '';
-  document.getElementById(`pset-${si}-${sl}`).classList.remove('show');
   updateCount(si);
 }
 
@@ -1283,13 +1183,7 @@ async function saveDoc() {
       photos: [0, 1].map(sl => {
         const p = photoData[si][sl];
         if (!p) return null;
-        return {
-          url:   b64map[`${si}_${sl}`] || '',
-          tgl:   p.tgl || tgl,
-          jam:   p.jam || '',
-          kel:   p.kel || sch.kel,
-          label: SLOT_LABELS[sl]
-        };
+        return { url: b64map[`${si}_${sl}`] || '' };
       })
     }));
 
@@ -1471,7 +1365,6 @@ async function openEdit(id) {
         ${[0, 1].map(sl => {
           const p = (school.photos || [])[sl];
           const hasImg = p && p.url;
-          const currentJam = p && p.jam ? p.jam : '';
           return `<div>
             <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">${SLOT_LABELS[sl]}</div>
             <div id="eslot-${si}-${sl}" style="aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:var(--ltr);border:1.5px dashed var(--border);position:relative">
@@ -1486,17 +1379,10 @@ async function openEdit(id) {
                    </div>`
               }
               ${hasImg ? `
-              <div onclick="trigEditFile(${si},${sl})" style="position:absolute;bottom:0;left:0;right:30px;background:rgba(7,30,73,.6);color:#fff;font-size:9px;text-align:center;padding:4px;cursor:pointer">
-                ↑ Ganti
-              </div>
+              <div onclick="trigEditFile(${si},${sl})" style="position:absolute;bottom:0;left:0;right:30px;background:rgba(7,30,73,.6);color:#fff;font-size:9px;text-align:center;padding:4px;cursor:pointer">↑ Ganti</div>
               <button onclick="deleteEditPhoto(${si},${sl})" style="position:absolute;bottom:0;right:0;width:30px;background:rgba(214,48,49,.85);color:#fff;border:none;font-size:13px;padding:3px 0;cursor:pointer;height:24px;display:flex;align-items:center;justify-content:center" title="Hapus foto">×</button>
               ` : ''}
             </div>
-            ${hasImg ? `
-            <div style="margin-top:5px;display:flex;align-items:center;gap:5px">
-              <label style="font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap">⏰ Jam:</label>
-              <input type="time" id="ejam-${si}-${sl}" value="${currentJam}" class="ps-input" style="flex:1;padding:4px 7px;border-radius:6px;border:1.5px solid var(--border);font-size:11px;font-family:inherit;background:#fff">
-            </div>` : ''}
           </div>`;
         }).join('')}
       </div>`;
@@ -1573,16 +1459,6 @@ async function confirmEdit() {
           local[idx].schools[si].photos[sl] = null;
         }
       });
-
-      // Handle jam yang DIEDIT (tanpa ganti foto)
-      for (let si = 0; si < (local[idx].schools || []).length; si++) {
-        for (let sl = 0; sl < 2; sl++) {
-          const jamEl = document.getElementById(`ejam-${si}-${sl}`);
-          if (jamEl && local[idx].schools[si]?.photos?.[sl]) {
-            local[idx].schools[si].photos[sl].jam = jamEl.value;
-          }
-        }
-      }
 
       // Handle foto yang DIGANTI/BARU
       if (Object.keys(_editNewPhotos).length > 0) {
@@ -1667,34 +1543,16 @@ function buildA4Pages(d) {
           const slot0 = photos[0] && photos[0].url ? photos[0] : null;
           const slot1 = photos[1] && photos[1].url ? photos[1] : null;
           if (!slot0 && !slot1) return '';
-
-          const info = SCHOOLS.find(s => s.name === school.name) || {};
-
-          const renderSlot = (p) => {
-            if (!p) {
-              // Slot kosong — kotak putih seukuran foto
-              return `<div class="a4-photo-box" style="background:#f8f9fb;border:1px solid #e0e8f0"></div>`;
-            }
-            const pd = new Date((p.tgl || d.tanggal) + 'T00:00:00');
-            const dd = pd.getDate().toString().padStart(2,'0');
-            const mm = (pd.getMonth()+1).toString().padStart(2,'0');
-            const yy = pd.getFullYear().toString().substring(2);
-            const tsLine1 = `${dd}/${mm}/${yy}${p.jam ? ', ' + p.jam : ''}`;
-            const tsLine2 = `Banda Aceh, Aceh\nIndonesia\n${p.kel || info.kel || 'Kuta Alam'}`;
-            return `<div class="a4-photo-box">
-              <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block">
-              <div class="a4-ts">
-                <span class="d">${tsLine1}</span>
-                <span class="l" style="white-space:pre-line">${tsLine2}</span>
-              </div>
-            </div>`;
+          const renderPrev = (p) => {
+            if (!p) return `<div class="a4-photo-box" style="background:#f8f9fb;border:1px solid #e0e8f0"></div>`;
+            return `<div class="a4-photo-box"><img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
           };
 
           return `<div class="a4-row">
             <div class="a4-school-name">${school.name}</div>
             <div class="a4-photos-wrap" style="grid-template-columns:1fr 1fr">
-              ${renderSlot(slot0)}
-              ${renderSlot(slot1)}
+              ${renderPrev(slot0)}
+              ${renderPrev(slot1)}
             </div>
           </div>`;
         }).join('')}
@@ -1981,18 +1839,8 @@ function buildPageHTML(chunk, pi, totalPages, d) {
 
     const renderSlot = (p) => {
       if (!p) return `<div style="flex:1;height:${photoH}px;flex-shrink:0;border-radius:4px;background:#f8f9fb;border:1px solid #e0e8f0"></div>`;
-      const pd = new Date((p.tgl || d.tanggal) + 'T00:00:00');
-      const dd = pd.getDate().toString().padStart(2,'0');
-      const mm = (pd.getMonth()+1).toString().padStart(2,'0');
-      const yy = pd.getFullYear().toString().substring(2);
-      const ts1 = `${dd}/${mm}/${yy}${p.jam ? ', ' + p.jam : ''}`;
-      const ts2 = `Banda Aceh, Aceh\nIndonesia\n${p.kel || info.kel || 'Kuta Alam'}`;
       return `<div style="flex:1;height:${photoH}px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee;position:relative;min-width:0">
         <img src="${p.url}" data-crop="true" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block">
-        <div style="position:absolute;top:3px;right:4px;text-align:right;font-family:'Courier New',monospace;line-height:1.5">
-          <span style="display:block;font-size:8px;font-weight:800;color:#ffffff;letter-spacing:.2px">${ts1}</span>
-          <span style="display:block;font-size:7px;font-weight:700;color:#ffffff;white-space:pre-line;line-height:1.4;margin-top:1px">${ts2}</span>
-        </div>
       </div>`;
     };
 
