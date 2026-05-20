@@ -344,13 +344,18 @@ input[type=month] {
 }
 .photo-slot.has-photo .ts-overlay { display: block; }
 .ts-overlay .ts-line1 {
-  display: block; font-size: 9px; color: #fff;
-  text-shadow: 1px 1px 3px rgba(0,0,0,.95);
+  display: block; font-size: 8px; font-weight: 700;
+  color: #fff;
+  background: rgba(0,0,0,.45);
+  padding: 1px 3px; border-radius: 2px;
+  letter-spacing: .2px;
 }
 .ts-overlay .ts-line2 {
-  display: block; font-size: 7px; color: #fff;
-  text-shadow: 1px 1px 3px rgba(0,0,0,.95);
-  white-space: pre-line;
+  display: block; font-size: 7px; font-weight: 700;
+  color: #fff;
+  background: rgba(0,0,0,.45);
+  padding: 1px 3px; border-radius: 2px;
+  white-space: pre-line; line-height: 1.4; margin-top: 1px;
 }
 
 /* Photo settings panel */
@@ -1976,9 +1981,9 @@ function buildPageHTML(chunk, pi, totalPages, d) {
       const ts2 = `Banda Aceh, Aceh\nIndonesia\n${p.kel || info.kel || 'Kuta Alam'}`;
       return `<div style="flex:1;height:${photoH}px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee;position:relative;min-width:0">
         <img src="${p.url}" data-crop="true" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block">
-        <div style="position:absolute;top:3px;right:4px;text-align:right;font-family:'Courier New',monospace;line-height:1.3">
-          <span style="display:block;font-size:6.5px;color:#fff;text-shadow:1px 1px 2px rgba(0,0,0,.95)">${ts1}</span>
-          <span style="display:block;font-size:5px;color:#fff;text-shadow:1px 1px 2px rgba(0,0,0,.95);white-space:pre-line">${ts2}</span>
+        <div style="position:absolute;top:3px;right:4px;text-align:right;font-family:'Courier New',monospace;line-height:1.5">
+          <span style="display:block;font-size:8px;font-weight:700;color:#ffffff;background:rgba(0,0,0,.45);padding:1px 3px;border-radius:2px;letter-spacing:.2px">${ts1}</span>
+          <span style="display:block;font-size:7px;font-weight:700;color:#ffffff;background:rgba(0,0,0,.45);padding:1px 3px;border-radius:2px;white-space:pre-line;line-height:1.4;margin-top:1px">${ts2}</span>
         </div>
       </div>`;
     };
