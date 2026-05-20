@@ -1308,6 +1308,7 @@ async function saveDoc() {
     const local = getLocal();
     local.unshift(docObj);
     setLocal(local);
+    invalidateCache();
 
     // ✅ UI done
     btn.disabled = false;
@@ -1428,6 +1429,7 @@ function confirmDelete() {
   // Remove from localStorage immediately
   const data = getLocal().filter(d => d.id !== _deleteId);
   setLocal(data);
+  invalidateCache();
 
   toast('Dihapus ✓');
   renderDashboard();
@@ -1591,8 +1593,7 @@ async function confirmEdit() {
       }
 
       setLocal(local);
-
-      // Firebase background update
+      invalidateCache(); update
       const hasChanges = Object.keys(_editNewPhotos).length > 0 || Object.keys(_editDeletedPhotos).length > 0;
       const updateData = { tanggal: tgl, keterangan: ket, hari: getDayName(tgl) };
       if (hasChanges) updateData.schools = local[idx].schools;
@@ -1693,95 +1694,221 @@ function buildA4Pages(d) {
 //  PRINT / PDF
 // ════════════════════════════════════════════════════
 let _printId = null;
+let _printDoc = null; // cache dokumen agar tombol tidak delay
+
+// Cache semua docs di memori untuk akses cepat
+let _docsCache = null;
+async function getDocsCached() {
+  if (_docsCache) return _docsCache;
+  _docsCache = await getAllDocs();
+  return _docsCache;
+}
+// Invalidate cache saat data berubah
+function invalidateCache() { _docsCache = null; }
 
 async function openPrint(id) {
   _printId = id;
-  const docs = await getAllDocs();
-  const d = docs.find(x => x.id === id || x.fbId === id);
-  if (!d) { toast('Data tidak ditemukan', true); return; }
+  // Cari dari cache lokal dulu — tidak perlu tunggu Firebase
+  const local = getLocal();
+  _printDoc = local.find(x => x.id === id) || null;
+  if (!_printDoc) {
+    // Fallback ke getAllDocs jika tidak ada di lokal
+    const docs = await getAllDocs();
+    _printDoc = docs.find(x => x.id === id || x.fbId === id);
+  }
+  if (!_printDoc) { toast('Data tidak ditemukan', true); return; }
 
-  document.getElementById('printPreview').innerHTML = buildA4Pages(d);
+  document.getElementById('printPreview').innerHTML = buildA4Pages(_printDoc);
   openModal('moPrint');
   markPrinted(id);
 }
 
+// PRINT — gunakan _printDoc yang sudah di-cache, tidak ada delay
 function doPrint() {
-  const pa = document.getElementById('print-area');
-  pa.innerHTML = document.getElementById('printPreview').innerHTML;
-  pa.style.display = 'block';
-  window.print();
-  setTimeout(() => { pa.innerHTML = ''; pa.style.display = 'none'; }, 3000);
+  if (!_printDoc) return;
+  // Buka window baru khusus print dengan CSS A4 yang tepat
+  const pages = buildA4Pages(_printDoc);
+  const printCSS = getPrintCSS();
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) { toast('Izinkan popup browser!', true); return; }
+  win.document.write(`<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <title>Print SPPG ${_printDoc.tanggal}</title>
+    <style>${printCSS}</style>
+  </head><body>${pages}</body></html>`);
+  win.document.close();
+  win.onload = () => { win.focus(); win.print(); };
 }
 
+// PDF — download .pdf asli menggunakan jsPDF + html2canvas
 async function doPDF() {
-  const docs = await getAllDocs();
-  const d = docs.find(x => x.id === _printId || x.fbId === _printId);
-  if (!d) { toast('Data tidak ditemukan', true); return; }
+  if (!_printDoc) return;
+  toast('Membuat PDF...');
 
-  const pages = buildA4Pages(d);
+  try {
+    // Load jsPDF dan html2canvas dari CDN
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
 
-  const pdfCSS = `
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#ddd;padding:14px}
-.no-print{max-width:794px;margin:0 auto 12px;background:#071e49;color:#fff;padding:11px 18px;border-radius:7px;font-size:12.5px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
-@media print{
-  body{background:#fff;padding:0}
-  .no-print{display:none}
-  @page{size:210mm 297mm;margin:0}
-  .a4-page{box-shadow:none!important;border-radius:0!important;margin:0!important;
-    width:210mm!important;padding:12mm 14mm!important;min-height:297mm!important;
-    page-break-after:always!important;break-after:page!important}
-}
-.a4-page{width:794px;background:#fff;padding:28px 36px;margin:0 auto 14px;box-shadow:0 4px 20px rgba(0,0,0,.15);border-radius:3px;font-family:'Segoe UI',system-ui,sans-serif}
-.kt1{font-size:9.5px;font-weight:600;color:#555;text-align:center}
-.kt2{font-size:10.5px;font-weight:700;color:#222;margin-top:1px;text-align:center}
-.kt3{font-size:15px;font-weight:900;color:#071e49;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;text-align:center}
-.kt4{font-size:8px;color:#777;margin-top:2px;text-align:center}.kop-divider{height:3px;background:#071e49;margin:7px 0 0}
-.kop-divider::after{content:'';display:block;height:1px;background:#e8a020;margin-top:2px}
-.pg2-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:7px;margin-bottom:10px;border-bottom:2px solid #071e49}
-.ph1{font-size:8.5px;font-weight:700;color:#071e49;text-transform:uppercase}
-.ph2{font-size:8px;color:#5a6d8a}
-.a4-schools{display:flex;flex-direction:column;gap:7px;margin-top:10px}
-.a4-row{display:flex;align-items:stretch;gap:7px;padding-bottom:7px;border-bottom:1px solid #eaeeea}
-.a4-row:last-child{border-bottom:none;padding-bottom:0}
-.a4-school-name{width:98px;flex-shrink:0;display:flex;align-items:center;font-size:7.5px;font-weight:800;color:#071e49;padding:4px 6px;background:#dce8f8;border-radius:5px;border-left:3px solid #071e49;line-height:1.35}
-.a4-photos-wrap{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.a4-photo-box{position:relative;aspect-ratio:4/3;border-radius:5px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee}
-.a4-photo-box img{width:100%;height:100%;object-fit:cover;display:block}
-.a4-ts{position:absolute;top:4px;right:5px;text-align:right;font-family:'Courier New',Courier,monospace;line-height:1.4;pointer-events:none}
-.a4-ts .d{display:block;font-size:7px;color:#fff;letter-spacing:.3px;text-shadow:1px 1px 2px rgba(0,0,0,.95)}
-.a4-ts .l{display:block;font-size:5.5px;color:#fff;letter-spacing:.2px;text-shadow:1px 1px 2px rgba(0,0,0,.95);white-space:pre-line}
-  `;
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  const html = `<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<title>SPPG_Mulia2_${d.tanggal}</title>
-<style>${pdfCSS}</style>
-</head>
-<body>
-<div class="no-print">
-  <span>📄 SPPG Mulia 2 — ${formatDate(d.tanggal)}</span>
-  <span style="font-size:11px;opacity:.75">Ctrl+P → Destination: Save as PDF → Save</span>
-</div>
-${pages}
-</body>
-</html>`;
+    // Render tiap halaman A4 ke canvas lalu masuk PDF
+    const pages = buildA4PagesArray(_printDoc); // array per halaman
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
+    document.body.appendChild(container);
 
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const win = window.open(url, '_blank');
-  if (win) {
-    win.onload = () => setTimeout(() => { win.focus(); win.print(); }, 600);
-    toast('Pilih "Save as PDF" di dialog print ✓');
-  } else {
-    // Popup blocked fallback
-    const a = document.createElement('a');
-    a.href = url; a.download = `SPPG_Mulia2_${d.tanggal}.html`; a.click();
-    toast('File diunduh — buka dan tekan Ctrl+P ✓');
+    for (let i = 0; i < pages.length; i++) {
+      container.innerHTML = `<div style="width:794px;padding:28px 36px;background:#fff;font-family:system-ui,sans-serif">${pages[i]}</div>`;
+      // Tunggu gambar load
+      const imgs = container.querySelectorAll('img');
+      await Promise.all(Array.from(imgs).map(img =>
+        img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
+      ));
+
+      const canvas = await html2canvas(container.firstChild, {
+        scale: 2, useCORS: true, backgroundColor: '#fff',
+        width: 794, windowWidth: 794
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+    }
+
+    document.body.removeChild(container);
+    pdf.save(`SPPG_Mulia2_${_printDoc.tanggal}.pdf`);
+    toast('✓ PDF berhasil diunduh!');
+  } catch(e) {
+    console.error('PDF error:', e);
+    // Fallback ke print dialog jika jsPDF gagal
+    toast('Membuka dialog print — pilih Save as PDF', false);
+    doPrint();
   }
-  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+// Load script sekali saja
+const _loadedScripts = new Set();
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (_loadedScripts.has(src)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => { _loadedScripts.add(src); res(); };
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+// CSS untuk print window (A4 tepat)
+function getPrintCSS() {
+  return `
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#fff;font-family:'Segoe UI',system-ui,sans-serif}
+@page{size:210mm 297mm;margin:0}
+.a4-page{
+  width:210mm;min-height:297mm;
+  padding:12mm 14mm;
+  background:#fff;
+  page-break-after:always;
+  break-after:page;
+  overflow:hidden;
+}
+.a4-page:last-child{page-break-after:auto;break-after:auto}
+${getA4CSS()}`;
+}
+
+// CSS A4 konten (dipakai di print dan PDF render)
+function getA4CSS() {
+  return `
+.kop-divider{height:3px;background:#071e49;margin:7px 0 0}
+.kop-divider::after{content:'';display:block;height:1px;background:#e8a020;margin-top:2px}
+.pg2-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;margin-bottom:8px;border-bottom:2px solid #071e49}
+.ph1{font-size:8px;font-weight:700;color:#071e49;text-transform:uppercase}
+.ph2{font-size:7.5px;color:#5a6d8a}
+.a4-schools{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.a4-row{display:flex;align-items:stretch;gap:6px;padding-bottom:5px;border-bottom:1px solid #eaeeea}
+.a4-row:last-child{border-bottom:none;padding-bottom:0}
+.a4-school-name{width:90px;flex-shrink:0;display:flex;align-items:center;font-size:7px;font-weight:800;color:#071e49;padding:3px 5px;background:#dce8f8;border-radius:4px;border-left:3px solid #071e49;line-height:1.3}
+.a4-photos-wrap{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.a4-photo-box{position:relative;aspect-ratio:4/3;border-radius:4px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee}
+.a4-photo-box img{width:100%;height:100%;object-fit:cover;display:block}
+.a4-ts{position:absolute;top:3px;right:4px;text-align:right;font-family:'Courier New',monospace;line-height:1.3;pointer-events:none}
+.a4-ts .d{display:block;font-size:6.5px;color:#fff;text-shadow:1px 1px 2px rgba(0,0,0,.95)}
+.a4-ts .l{display:block;font-size:5px;color:#fff;text-shadow:1px 1px 2px rgba(0,0,0,.95);white-space:pre-line}`;
+}
+
+// Build halaman sebagai array (satu item = satu halaman HTML string)
+function buildA4PagesArray(d) {
+  const schoolsWithPhotos = (d.schools || []).filter(s => (s.photos || []).some(p => p && p.url));
+  const PER_PAGE = 5;
+  const pages = [];
+  for (let i = 0; i < schoolsWithPhotos.length; i += PER_PAGE) {
+    pages.push(schoolsWithPhotos.slice(i, i + PER_PAGE));
+  }
+  if (!pages.length) pages.push([]);
+  return pages.map((chunk, pi) => buildPageHTML(chunk, pi, pages.length, d));
+}
+
+function buildPageHTML(chunk, pi, totalPages, d) {
+  const header = pi === 0
+    ? `<div style="text-align:center;margin-bottom:4px">
+        <div style="font-size:14px;font-weight:900;color:#071e49;letter-spacing:.3px">SPPG Banda Aceh Kuta Alam Mulia 2</div>
+        <div style="font-size:8px;color:#555;margin-top:3px">Jl. Teungku Di Blang No.Kel, Mulia, Kec. Kuta Alam, Kota Banda Aceh, Aceh 23123</div>
+      </div>
+      <div class="kop-divider"></div>
+      <div style="text-align:center;padding:5px 0 8px">
+        <div style="font-size:11px;font-weight:800;color:#071e49;text-transform:uppercase;letter-spacing:.5px">Dokumentasi Distribusi</div>
+        <div style="font-size:8.5px;color:#5a6d8a;margin-top:2px">${formatDate(d.tanggal)}</div>
+      </div>`
+    : `<div class="pg2-header">
+        <span class="ph1">Dokumentasi Distribusi SPPG — Kuta Alam Mulia 2</span>
+        <span class="ph2">${formatDate(d.tanggal)} · Hal ${pi+1}/${totalPages}</span>
+      </div>`;
+
+  const rows = chunk.map(school => {
+    const photos = school.photos || [null, null];
+    const slot0 = photos[0] && photos[0].url ? photos[0] : null;
+    const slot1 = photos[1] && photos[1].url ? photos[1] : null;
+    if (!slot0 && !slot1) return '';
+    const info = SCHOOLS.find(s => s.name === school.name) || {};
+
+    const renderSlot = (p) => {
+      if (!p) return `<div class="a4-photo-box" style="background:#f8f9fb;border:1px solid #e0e8f0"></div>`;
+      const pd = new Date((p.tgl || d.tanggal) + 'T00:00:00');
+      const dd = pd.getDate().toString().padStart(2,'0');
+      const mm = (pd.getMonth()+1).toString().padStart(2,'0');
+      const yy = pd.getFullYear().toString().substring(2);
+      const ts1 = `${dd}/${mm}/${yy}${p.jam ? ', ' + p.jam : ''}`;
+      const ts2 = `Banda Aceh, Aceh\nIndonesia\n${p.kel || info.kel || 'Kuta Alam'}`;
+      return `<div class="a4-photo-box">
+        <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block">
+        <div class="a4-ts"><span class="d">${ts1}</span><span class="l" style="white-space:pre-line">${ts2}</span></div>
+      </div>`;
+    };
+
+    return `<div class="a4-row">
+      <div class="a4-school-name">${school.name}</div>
+      <div class="a4-photos-wrap">${renderSlot(slot0)}${renderSlot(slot1)}</div>
+    </div>`;
+  }).join('');
+
+  return `${header}<div class="a4-schools">${rows}</div>`;
+}
+
+// buildA4Pages sekarang pakai buildA4PagesArray (untuk preview di modal)
+function buildA4Pages(d) {
+  const arr = buildA4PagesArray(d);
+  const totalPages = arr.length;
+  const schoolsWithPhotos = (d.schools || []).filter(s => (s.photos || []).some(p => p && p.url));
+  const PER_PAGE = 5;
+  const pageChunks = [];
+  for (let i = 0; i < schoolsWithPhotos.length; i += PER_PAGE) pageChunks.push(schoolsWithPhotos.slice(i, i + PER_PAGE));
+  if (!pageChunks.length) pageChunks.push([]);
+
+  return pageChunks.map((chunk, pi) =>
+    `<div class="a4-page">${buildPageHTML(chunk, pi, totalPages, d)}</div>`
+  ).join('');
 }
 
 async function markPrinted(id) {
@@ -1789,6 +1916,7 @@ async function markPrinted(id) {
     const local = getLocal();
     const idx = local.findIndex(d => d.id === id);
     if (idx > -1) { local[idx].printed = true; setLocal(local); }
+    invalidateCache();
     fbUpdate(id, { printed: true });
     setTimeout(() => { renderDashboard(); renderDaftar(); }, 200);
   } catch {}
