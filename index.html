@@ -727,10 +727,60 @@ try {
 </script>
 
 <script>
-// ══════════════════════════════════════
-//  FIX BUG #1: Deklarasikan _loadedScripts di sini
-// ══════════════════════════════════════
 const _loadedScripts = new Set();
+
+// ══════════════════════════════════════
+//  COMPRESS IMAGE — sekuensial aman, satu-per-satu
+//  Parallel canvas banyak foto → memory crash di browser
+// ══════════════════════════════════════
+function compressImage(file, maxW = 1100, maxH = 1100, quality = 0.72) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const blobUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      try {
+        URL.revokeObjectURL(blobUrl);
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > maxW || h > maxH) {
+          const ratio = Math.min(maxW / w, maxH / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const result = cv.toDataURL('image/jpeg', quality);
+        // Bebaskan memori canvas setelah selesai
+        cv.width = 0; cv.height = 0;
+        resolve(result);
+      } catch(e) {
+        console.warn('compressImage error:', e);
+        URL.revokeObjectURL(blobUrl);
+        resolve(null);
+      }
+    };
+    img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
+    img.src = blobUrl;
+  });
+}
+
+// Kompres array foto SATU PER SATU (sequential) — aman untuk banyak foto
+// onProgress(current, total) dipanggil setiap foto selesai
+async function compressAllSequential(photoList, onProgress) {
+  const results = {};
+  for (let i = 0; i < photoList.length; i++) {
+    const p = photoList[i];
+    const key = `${p.si}_${p.sl}`;
+    if (onProgress) onProgress(i + 1, photoList.length);
+    const compressed = await compressImage(p.file);
+    results[key] = compressed || '';
+    // Yield ke browser agar tidak freeze UI
+    await new Promise(r => setTimeout(r, 0));
+  }
+  return results;
+}
 
 const SCHOOLS = [
   { name: "TK/RA Purwanida"           },
@@ -1116,20 +1166,18 @@ async function saveDoc() {
 
   const btn = document.getElementById('btnSave');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spin-sm"></span> Menyimpan...';
+  btn.innerHTML = '<span class="spin-sm"></span> Menyiapkan...';
 
   try {
     const ket = document.getElementById('inKet').value;
     const docId = 'doc_' + Date.now();
+    const total = allPhotos.length;
 
-    // Baca semua foto sebagai base64
-    const b64map = {};
-    await Promise.all(allPhotos.map(p => new Promise(resolve => {
-      const fr = new FileReader();
-      fr.onload = e => { b64map[`${p.si}_${p.sl}`] = e.target.result; resolve(); };
-      fr.onerror = () => { b64map[`${p.si}_${p.sl}`] = ''; resolve(); };
-      fr.readAsDataURL(p.file);
-    })));
+    // Kompres SATU PER SATU — mencegah memory crash (parallel canvas crash di banyak foto)
+    const b64map = await compressAllSequential(allPhotos, (done, tot) => {
+      btn.innerHTML = `<span class="spin-sm"></span> Kompresi foto ${done}/${tot}...`;
+    });
+    btn.innerHTML = '<span class="spin-sm"></span> Menyimpan...';
 
     // Build schools data
     const schools = SCHOOLS.map((sch, si) => ({
@@ -1174,7 +1222,6 @@ async function saveDoc() {
     toggleInput();
     resetForm();
 
-    // ══ FIX BUG #1: Render SETELAH localStorage update selesai ══
     renderDashboard();
     renderDaftar();
 
@@ -1293,16 +1340,18 @@ function confirmDelete() {
 }
 
 // ══════════════════════════════════════
-//  EDIT
+//  EDIT — dengan drag-to-pan & kompresi
 // ══════════════════════════════════════
 let _editId = null;
-let _editNewPhotos = {};
-let _editDeletedPhotos = {};
+let _editNewPhotos = {};     // key "si_sl" → File
+let _editDeletedPhotos = {}; // key "si_sl" → true
+let _editPosMap = {};        // key "si_sl" → {posX, posY}  ← untuk drag pan
 
 function openEdit(id) {
   _editId = id;
   _editNewPhotos = {};
   _editDeletedPhotos = {};
+  _editPosMap = {};
 
   const docs = getAllDocs();
   const d = docs.find(x => x.id === id);
@@ -1323,14 +1372,20 @@ function openEdit(id) {
         ${[0, 1].map(sl => {
           const p = (school.photos || [])[sl];
           const hasImg = p && p.url;
+          // Simpan posisi awal dari data tersimpan
+          if (hasImg) _editPosMap[`${si}_${sl}`] = { posX: p.posX ?? 50, posY: p.posY ?? 50 };
           return `<div>
             <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">${SLOT_LABELS[sl]}</div>
-            <div id="eslot-${si}-${sl}" style="aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:var(--ltr);border:1.5px dashed var(--border);position:relative">
+            <div id="eslot-${si}-${sl}" style="aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:var(--ltr);border:1.5px dashed var(--border);position:relative;cursor:${hasImg?'grab':'pointer'}">
               <input type="file" accept="image/*" id="efi-${si}-${sl}" style="display:none" onchange="onEditFile(event,${si},${sl})">
               ${hasImg
-                ? `<img id="eim-${si}-${sl}" src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block">
-                   <div onclick="trigEditFile(${si},${sl})" style="position:absolute;bottom:0;left:0;right:30px;background:rgba(7,30,73,.6);color:#fff;font-size:9px;text-align:center;padding:4px;cursor:pointer">↑ Ganti</div>
-                   <button onclick="deleteEditPhoto(${si},${sl})" style="position:absolute;bottom:0;right:0;width:30px;background:rgba(214,48,49,.85);color:#fff;border:none;font-size:13px;cursor:pointer;height:24px;display:flex;align-items:center;justify-content:center" title="Hapus foto">×</button>`
+                ? `<img id="eim-${si}-${sl}" src="${p.url}" style="width:100%;height:100%;object-fit:cover;object-position:${p.posX??50}% ${p.posY??50}%;display:block;pointer-events:none;user-select:none">
+                   <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(7,30,73,.65));padding:5px 8px 4px;pointer-events:none">
+                     <span style="font-size:8.5px;color:rgba(255,255,255,.8)">✋ Geser · </span>
+                     <span onclick="event.stopPropagation();trigEditFile(${si},${sl})" style="font-size:8.5px;color:#fff;cursor:pointer;font-weight:700;pointer-events:auto">↑ Ganti</span>
+                     <span style="font-size:8.5px;color:rgba(255,255,255,.5)"> · </span>
+                     <span onclick="event.stopPropagation();deleteEditPhoto(${si},${sl})" style="font-size:8.5px;color:#ff8080;cursor:pointer;font-weight:700;pointer-events:auto">✕ Hapus</span>
+                   </div>`
                 : `<div id="eim-${si}-${sl}" onclick="trigEditFile(${si},${sl})" style="display:flex;align-items:center;justify-content:center;height:100%;cursor:pointer">
                      <div style="text-align:center;padding:10px">
                        <div style="font-size:22px;margin-bottom:4px">📷</div>
@@ -1345,6 +1400,18 @@ function openEdit(id) {
     cont.appendChild(div);
   });
 
+  // Pasang drag-to-pan untuk foto yang sudah ada
+  (d.schools || []).forEach((school, si) => {
+    [0, 1].forEach(sl => {
+      const p = (school.photos || [])[sl];
+      if (p && p.url) {
+        const slotEl = document.getElementById(`eslot-${si}-${sl}`);
+        const imgEl  = document.getElementById(`eim-${si}-${sl}`);
+        if (slotEl && imgEl) initEditDrag(slotEl, imgEl, si, sl);
+      }
+    });
+  });
+
   openModal('moEdit');
 }
 
@@ -1352,29 +1419,105 @@ function trigEditFile(si, sl) {
   document.getElementById(`efi-${si}-${sl}`)?.click();
 }
 
-function onEditFile(e, si, sl) {
+// Drag-to-pan untuk edit modal — mirip initDragPan tapi pakai _editPosMap
+function initEditDrag(slotEl, imgEl, si, sl) {
+  if (slotEl._editDragCleanup) slotEl._editDragCleanup();
+
+  let isDragging = false, hasMoved = false;
+  let startX, startY, startPosX, startPosY;
+
+  function getXY(e) {
+    return e.touches
+      ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      : { x: e.clientX, y: e.clientY };
+  }
+
+  function onStart(e) {
+    // Abaikan klik pada tombol di overlay
+    if (e.target.closest('span[onclick]') || e.target.closest('button')) return;
+    if (!imgEl || imgEl.tagName !== 'IMG') return;
+    const pos = getXY(e);
+    startX = pos.x; startY = pos.y; hasMoved = false;
+    const cur = _editPosMap[`${si}_${sl}`] || { posX: 50, posY: 50 };
+    startPosX = cur.posX; startPosY = cur.posY;
+    isDragging = true;
+    slotEl.style.cursor = 'grabbing';
+  }
+
+  function onMove(e) {
+    if (!isDragging) return;
+    const pos = getXY(e);
+    if (!hasMoved && Math.abs(pos.x - startX) < 4 && Math.abs(pos.y - startY) < 4) return;
+    hasMoved = true;
+    if (e.cancelable) e.preventDefault();
+    const rect = slotEl.getBoundingClientRect();
+    const newX = Math.min(100, Math.max(0, startPosX + (pos.x - startX) / rect.width  * -80));
+    const newY = Math.min(100, Math.max(0, startPosY + (pos.y - startY) / rect.height * -80));
+    imgEl.style.objectPosition = `${newX}% ${newY}%`;
+    _editPosMap[`${si}_${sl}`] = { posX: newX, posY: newY };
+  }
+
+  function onEnd() {
+    isDragging = false;
+    slotEl.style.cursor = 'grab';
+  }
+
+  slotEl.addEventListener('mousedown',  onStart);
+  slotEl.addEventListener('mousemove',  onMove);
+  slotEl.addEventListener('mouseup',    onEnd);
+  slotEl.addEventListener('mouseleave', onEnd);
+  slotEl.addEventListener('touchstart', onStart, { passive: true });
+  slotEl.addEventListener('touchmove',  onMove,  { passive: false });
+  slotEl.addEventListener('touchend',   onEnd,   { passive: true });
+
+  slotEl._editDragCleanup = () => {
+    slotEl.removeEventListener('mousedown',  onStart);
+    slotEl.removeEventListener('mousemove',  onMove);
+    slotEl.removeEventListener('mouseup',    onEnd);
+    slotEl.removeEventListener('mouseleave', onEnd);
+    slotEl.removeEventListener('touchstart', onStart);
+    slotEl.removeEventListener('touchmove',  onMove);
+    slotEl.removeEventListener('touchend',   onEnd);
+  };
+}
+
+async function onEditFile(e, si, sl) {
   const file = e.target.files[0];
   if (!file) return;
   delete _editDeletedPhotos[`${si}_${sl}`];
   _editNewPhotos[`${si}_${sl}`] = file;
+  // Reset posisi ke center untuk foto baru
+  _editPosMap[`${si}_${sl}`] = { posX: 50, posY: 50 };
 
   const url = URL.createObjectURL(file);
   const slotDiv = document.getElementById(`eslot-${si}-${sl}`);
   if (!slotDiv) return;
 
+  slotDiv.style.cursor = 'grab';
   slotDiv.innerHTML = `
     <input type="file" accept="image/*" id="efi-${si}-${sl}" style="display:none" onchange="onEditFile(event,${si},${sl})">
-    <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block">
-    <div onclick="trigEditFile(${si},${sl})" style="position:absolute;bottom:0;left:0;right:30px;background:rgba(7,30,73,.6);color:#fff;font-size:9px;text-align:center;padding:4px;cursor:pointer">↑ Ganti</div>
-    <button onclick="deleteEditPhoto(${si},${sl})" style="position:absolute;bottom:0;right:0;width:30px;background:rgba(214,48,49,.85);color:#fff;border:none;font-size:13px;cursor:pointer;height:24px;display:flex;align-items:center;justify-content:center;z-index:3">×</button>
+    <img id="eim-${si}-${sl}" src="${url}" style="width:100%;height:100%;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;user-select:none">
+    <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(7,30,73,.65));padding:5px 8px 4px;pointer-events:none">
+      <span style="font-size:8.5px;color:rgba(255,255,255,.8)">✋ Geser · </span>
+      <span onclick="event.stopPropagation();trigEditFile(${si},${sl})" style="font-size:8.5px;color:#fff;cursor:pointer;font-weight:700;pointer-events:auto">↑ Ganti</span>
+      <span style="font-size:8.5px;color:rgba(255,255,255,.5)"> · </span>
+      <span onclick="event.stopPropagation();deleteEditPhoto(${si},${sl})" style="font-size:8.5px;color:#ff8080;cursor:pointer;font-weight:700;pointer-events:auto">✕ Hapus</span>
+    </div>
   `;
+
+  // Pasang drag pada foto baru
+  const imgEl = document.getElementById(`eim-${si}-${sl}`);
+  if (imgEl) initEditDrag(slotDiv, imgEl, si, sl);
 }
 
 function deleteEditPhoto(si, sl) {
   _editDeletedPhotos[`${si}_${sl}`] = true;
   delete _editNewPhotos[`${si}_${sl}`];
+  delete _editPosMap[`${si}_${sl}`];
   const slotDiv = document.getElementById(`eslot-${si}-${sl}`);
   if (!slotDiv) return;
+  if (slotDiv._editDragCleanup) { slotDiv._editDragCleanup(); slotDiv._editDragCleanup = null; }
+  slotDiv.style.cursor = 'pointer';
   slotDiv.innerHTML = `
     <input type="file" accept="image/*" id="efi-${si}-${sl}" style="display:none" onchange="onEditFile(event,${si},${sl})">
     <div onclick="trigEditFile(${si},${sl})" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;cursor:pointer;gap:5px">
@@ -1398,6 +1541,16 @@ async function confirmEdit() {
       local[idx].keterangan = ket;
       local[idx].hari       = getDayName(tgl);
 
+      // Terapkan posisi drag terbaru (termasuk foto lama yang digeser)
+      Object.entries(_editPosMap).forEach(([key, pos]) => {
+        const [si, sl] = key.split('_').map(Number);
+        if (local[idx].schools?.[si]?.photos?.[sl]) {
+          local[idx].schools[si].photos[sl].posX = pos.posX;
+          local[idx].schools[si].photos[sl].posY = pos.posY;
+        }
+      });
+
+      // Terapkan foto yang DIHAPUS
       Object.keys(_editDeletedPhotos).forEach(key => {
         const [si, sl] = key.split('_').map(Number);
         if (local[idx].schools?.[si]?.photos) {
@@ -1405,24 +1558,28 @@ async function confirmEdit() {
         }
       });
 
+      // Kompres & simpan foto BARU — sekuensial aman
       if (Object.keys(_editNewPhotos).length > 0) {
-        await Promise.all(Object.entries(_editNewPhotos).map(([key, file]) => new Promise(resolve => {
+        const editPhotoList = Object.entries(_editNewPhotos).map(([key, file]) => {
           const [si, sl] = key.split('_').map(Number);
-          const fr = new FileReader();
-          fr.onload = e => {
-            if (local[idx].schools?.[si]?.photos) {
-              if (!local[idx].schools[si].photos[sl]) {
-                local[idx].schools[si].photos[sl] = {};
-              }
-              local[idx].schools[si].photos[sl].url   = e.target.result;
-              local[idx].schools[si].photos[sl].posX  = 50;
-              local[idx].schools[si].photos[sl].posY  = 50;
-            }
-            resolve();
-          };
-          fr.onerror = () => resolve();
-          fr.readAsDataURL(file);
-        })));
+          return { file, si, sl };
+        });
+        const total = editPhotoList.length;
+        let done = 0;
+        for (const { file, si, sl } of editPhotoList) {
+          done++;
+          const loaderTxt = document.getElementById('loaderTxt');
+          if (loaderTxt) loaderTxt.textContent = `Kompresi foto ${done}/${total}...`;
+          const compressed = await compressImage(file);
+          await new Promise(r => setTimeout(r, 0)); // yield ke browser
+          if (local[idx].schools?.[si]?.photos) {
+            if (!local[idx].schools[si].photos[sl]) local[idx].schools[si].photos[sl] = {};
+            local[idx].schools[si].photos[sl].url  = compressed || '';
+            const pos = _editPosMap[`${si}_${sl}`] || { posX: 50, posY: 50 };
+            local[idx].schools[si].photos[sl].posX = pos.posX;
+            local[idx].schools[si].photos[sl].posY = pos.posY;
+          }
+        }
       }
 
       setLocal(local);
@@ -1432,12 +1589,14 @@ async function confirmEdit() {
     toast('Data berhasil diperbarui ✓');
   } catch(e) {
     toast('Gagal: ' + e.message, true);
+    console.error('confirmEdit error:', e);
   }
 
   hideLoader();
   closeModal('moEdit');
   _editNewPhotos = {};
   _editDeletedPhotos = {};
+  _editPosMap = {};
   renderDashboard();
   renderDaftar();
 }
