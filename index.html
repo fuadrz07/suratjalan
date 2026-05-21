@@ -635,6 +635,19 @@ input[type=month] {
   </div>
 </nav>
 
+<!-- Duplicate Date Modal -->
+<div class="modal-overlay" id="moDup">
+  <div class="modal-box">
+    <div class="modal-drag"></div>
+    <h3>⚠️ Tanggal Sudah Ada</h3>
+    <div id="moDupBody" style="font-size:13.5px;color:var(--muted);line-height:1.7"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="cancelDuplicate()">Batal — Ubah Tanggal</button>
+      <button class="btn btn-gold btn-sm" onclick="forceSave()">Tetap Simpan</button>
+    </div>
+  </div>
+</div>
+
 <!-- Delete Modal -->
 <div class="modal-overlay" id="moDel">
   <div class="modal-box">
@@ -1164,6 +1177,45 @@ async function saveDoc() {
   const allPhotos = photoData.flat().filter(Boolean);
   if (!allPhotos.length) { toast('Upload minimal 1 foto!', true); return; }
 
+  // ── Cek duplikasi tanggal ──
+  const dupDoc = getLocal().find(d => d.tanggal === tgl);
+  if (dupDoc) {
+    const photoCount = (dupDoc.schools || []).reduce((s, sc) => s + (sc.photos || []).filter(Boolean).length, 0);
+    document.getElementById('moDupBody').innerHTML =
+      `Sudah ada dokumentasi untuk tanggal <strong>${formatDate(tgl)}</strong>.<br>
+       <span style="font-size:12px">(${photoCount} foto · ${dupDoc.keterangan || 'tanpa keterangan'})</span><br><br>
+       Dua dokumen dengan tanggal sama bisa membingungkan saat cetak dan arsip.`;
+    _pendingSave = true;
+    openModal('moDup');
+    return;
+  }
+
+  await _doSave();
+}
+
+// State untuk pending save saat konfirmasi duplikat
+let _pendingSave = false;
+let _pendingEditConfirm = false;
+
+function cancelDuplicate() {
+  _pendingSave = false;
+  _pendingEditConfirm = false;
+  closeModal('moDup');
+  // Fokus ke field tanggal supaya user langsung bisa ubah
+  if (_editId) setTimeout(() => document.getElementById('edTgl')?.focus(), 200);
+  else setTimeout(() => document.getElementById('inTgl')?.focus(), 200);
+}
+
+async function forceSave() {
+  closeModal('moDup');
+  if (_pendingSave)       { _pendingSave = false;       await _doSave(); }
+  if (_pendingEditConfirm){ _pendingEditConfirm = false; await _doEditSave(); }
+}
+
+async function _doSave() {
+  const tgl = document.getElementById('inTgl').value;
+  const allPhotos = photoData.flat().filter(Boolean);
+
   const btn = document.getElementById('btnSave');
   btn.disabled = true;
   btn.innerHTML = '<span class="spin-sm"></span> Menyiapkan...';
@@ -1171,7 +1223,6 @@ async function saveDoc() {
   try {
     const ket = document.getElementById('inKet').value;
     const docId = 'doc_' + Date.now();
-    const total = allPhotos.length;
 
     // Kompres SATU PER SATU — mencegah memory crash (parallel canvas crash di banyak foto)
     const b64map = await compressAllSequential(allPhotos, (done, tot) => {
@@ -1215,7 +1266,6 @@ async function saveDoc() {
     if (fdEl) fdEl.value = docMonth;
     if (ffEl) ffEl.value = docMonth;
 
-    // Reset tombol
     btn.disabled = false;
     btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi`;
     toast('✓ Dokumentasi berhasil disimpan!');
@@ -1235,10 +1285,13 @@ async function saveDoc() {
     });
 
   } catch(e) {
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi`;
+    const btn2 = document.getElementById('btnSave');
+    if (btn2) {
+      btn2.disabled = false;
+      btn2.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Simpan Dokumentasi`;
+    }
     toast('Gagal menyimpan: ' + e.message, true);
-    console.error('saveDoc error:', e);
+    console.error('_doSave error:', e);
   }
 }
 
@@ -1531,7 +1584,31 @@ async function confirmEdit() {
   if (!_editId) return;
   const tgl = document.getElementById('edTgl').value;
   const ket = document.getElementById('edKet').value;
+
+  // Cek duplikat tanggal — hanya jika tanggal BERUBAH ke tanggal yang sudah ada (bukan dirinya sendiri)
+  const local0 = getLocal();
+  const selfDoc = local0.find(d => d.id === _editId);
+  const dupDoc  = local0.find(d => d.tanggal === tgl && d.id !== _editId);
+  if (dupDoc && selfDoc?.tanggal !== tgl) {
+    const photoCount = (dupDoc.schools || []).reduce((s, sc) => s + (sc.photos || []).filter(Boolean).length, 0);
+    document.getElementById('moDupBody').innerHTML =
+      `Sudah ada dokumentasi untuk tanggal <strong>${formatDate(tgl)}</strong>.<br>
+       <span style="font-size:12px">(${photoCount} foto · ${dupDoc.keterangan || 'tanpa keterangan'})</span><br><br>
+       Dua dokumen dengan tanggal sama bisa membingungkan saat cetak dan arsip.`;
+    // Simpan callback untuk "Tetap Simpan" di edit context
+    _pendingSave = false;
+    _pendingEditConfirm = true;
+    openModal('moDup');
+    return;
+  }
+
   showLoader('Menyimpan perubahan...');
+  await _doEditSave();
+}
+
+async function _doEditSave() {
+  const tgl = document.getElementById('edTgl').value;
+  const ket = document.getElementById('edKet').value;
 
   try {
     const local = getLocal();
@@ -1571,7 +1648,7 @@ async function confirmEdit() {
           const loaderTxt = document.getElementById('loaderTxt');
           if (loaderTxt) loaderTxt.textContent = `Kompresi foto ${done}/${total}...`;
           const compressed = await compressImage(file);
-          await new Promise(r => setTimeout(r, 0)); // yield ke browser
+          await new Promise(r => setTimeout(r, 0));
           if (local[idx].schools?.[si]?.photos) {
             if (!local[idx].schools[si].photos[sl]) local[idx].schools[si].photos[sl] = {};
             local[idx].schools[si].photos[sl].url  = compressed || '';
@@ -1589,7 +1666,7 @@ async function confirmEdit() {
     toast('Data berhasil diperbarui ✓');
   } catch(e) {
     toast('Gagal: ' + e.message, true);
-    console.error('confirmEdit error:', e);
+    console.error('_doEditSave error:', e);
   }
 
   hideLoader();
