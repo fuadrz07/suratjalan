@@ -337,6 +337,27 @@ input[type=month] {
 
 /* Photo settings - removed */
 
+/* ── DRAG TO PAN ── */
+.photo-slot.has-photo { cursor: grab; }
+.photo-slot.has-photo:active { cursor: grabbing; }
+.photo-slot.has-photo img {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  pointer-events: none;
+  transition: object-position .05s;
+}
+.pan-hint {
+  position: absolute; bottom: 28px; left: 0; right: 0;
+  text-align: center; pointer-events: none;
+  font-size: 10px; font-weight: 600;
+  color: #fff; opacity: 0;
+  transition: opacity .3s;
+  text-shadow: 0 1px 3px rgba(0,0,0,.8);
+}
+.photo-slot.has-photo:hover .pan-hint { opacity: 1; }
+
 /* =========================================================
    TOAST
    ========================================================= */
@@ -1086,9 +1107,9 @@ function buildSchoolsUI() {
         <div class="slots-grid">
           ${[0, 1].map(sl => `
           <div class="slot-wrap">
-            <div class="photo-slot" id="slot-${si}-${sl}" onclick="triggerFile(${si},${sl})">
+            <div class="photo-slot" id="slot-${si}-${sl}">
               <input type="file" accept="image/*" id="file-${si}-${sl}" onchange="onFileSelect(event,${si},${sl})">
-              <div class="slot-placeholder">
+              <div class="slot-placeholder" onclick="triggerFile(${si},${sl})" style="cursor:pointer;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px">
                 <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                   <rect x="3" y="3" width="18" height="18" rx="2"/>
                   <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -1097,6 +1118,7 @@ function buildSchoolsUI() {
                 <span>Tap untuk upload</span>
               </div>
               <img id="img-${si}-${sl}" src="" style="display:none">
+              <div class="pan-hint">✋ Geser untuk atur posisi</div>
               <button class="slot-remove" onclick="removePhoto(event,${si},${sl})">×</button>
             </div>
           </div>`).join('')}
@@ -1120,11 +1142,71 @@ function onFileSelect(e, si, sl) {
   if (!file) return;
   const objUrl = URL.createObjectURL(file);
   const imgEl = document.getElementById(`img-${si}-${sl}`);
-  imgEl.src = objUrl; imgEl.style.display = 'block';
-  document.getElementById(`slot-${si}-${sl}`).classList.add('has-photo');
+  imgEl.src = objUrl;
+  imgEl.style.display = 'block';
+  imgEl.style.objectPosition = '50% 50%';
+  const slotEl = document.getElementById(`slot-${si}-${sl}`);
+  slotEl.classList.add('has-photo');
   if (photoData[si][sl]?.objUrl) URL.revokeObjectURL(photoData[si][sl].objUrl);
-  photoData[si][sl] = { file, objUrl, si, sl };
+  photoData[si][sl] = { file, objUrl, si, sl, posX: 50, posY: 50 };
+  initDragPan(slotEl, imgEl, si, sl);
   updateCount(si);
+}
+
+// ── DRAG TO PAN ──
+function initDragPan(slotEl, imgEl, si, sl) {
+  let isDragging = false;
+  let startX, startY, startPosX, startPosY;
+
+  // Mouse events
+  slotEl.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onEnd);
+
+  // Touch events
+  slotEl.addEventListener('touchstart', onStart, { passive: true });
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('touchend', onEnd);
+
+  function getXY(e) {
+    return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                     : { x: e.clientX, y: e.clientY };
+  }
+
+  function onStart(e) {
+    // Jangan drag jika klik tombol hapus atau placeholder
+    if (e.target.closest('.slot-remove') || e.target.closest('.slot-placeholder')) return;
+    if (!slotEl.classList.contains('has-photo')) return;
+    isDragging = true;
+    const pos = getXY(e);
+    startX = pos.x; startY = pos.y;
+    const pd = photoData[si][sl];
+    startPosX = pd ? pd.posX : 50;
+    startPosY = pd ? pd.posY : 50;
+    e.preventDefault && e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!isDragging) return;
+    e.preventDefault && e.preventDefault();
+    const pos = getXY(e);
+    const rect = slotEl.getBoundingClientRect();
+    // Sensitivitas: 1px drag = bergerak sebanding lebar/tinggi slot
+    const dx = (pos.x - startX) / rect.width  * -100;
+    const dy = (pos.y - startY) / rect.height * -100;
+    const newX = Math.min(100, Math.max(0, startPosX + dx));
+    const newY = Math.min(100, Math.max(0, startPosY + dy));
+    imgEl.style.objectPosition = `${newX}% ${newY}%`;
+    if (photoData[si][sl]) {
+      photoData[si][sl].posX = newX;
+      photoData[si][sl].posY = newY;
+    }
+  }
+
+  function onEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+  }
 }
 
 function removePhoto(e, si, sl) {
@@ -1183,7 +1265,11 @@ async function saveDoc() {
       photos: [0, 1].map(sl => {
         const p = photoData[si][sl];
         if (!p) return null;
-        return { url: b64map[`${si}_${sl}`] || '' };
+        return {
+          url:  b64map[`${si}_${sl}`] || '',
+          posX: p.posX ?? 50,
+          posY: p.posY ?? 50
+        };
       })
     }));
 
@@ -1545,7 +1631,9 @@ function buildA4Pages(d) {
           if (!slot0 && !slot1) return '';
           const renderPrev = (p) => {
             if (!p) return `<div class="a4-photo-box" style="background:#f8f9fb;border:1px solid #e0e8f0"></div>`;
-            return `<div class="a4-photo-box"><img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+            const posX = p.posX ?? 50;
+            const posY = p.posY ?? 50;
+            return `<div class="a4-photo-box"><img src="${p.url}" style="width:100%;height:100%;object-fit:cover;object-position:${posX}% ${posY}%;display:block"></div>`;
           };
 
           return `<div class="a4-row">
@@ -1734,13 +1822,36 @@ async function precropImagesInPage(container, photoH) {
   await Promise.all(Array.from(imgs).map(img => new Promise(res => {
     const doProcess = () => {
       try {
-        // Dapatkan lebar container foto
         const w = img.parentElement ? img.parentElement.offsetWidth : 300;
-        const cropped = cropImageToDataURL(img, w || 300, photoH);
-        img.src = cropped;
+        // Baca posisi dari style object-position
+        const style = img.style.objectPosition || '50% 50%';
+        const parts = style.split(' ');
+        const px = parseFloat(parts[0]) / 100;
+        const py = parseFloat(parts[1] || parts[0]) / 100;
+
+        const sw = img.naturalWidth;
+        const sh = img.naturalHeight;
+        const tW = w || 300;
+        const tH = photoH;
+        const srcRatio = sw / sh;
+        const tgtRatio = tW / tH;
+
+        let cropW, cropH, cropX, cropY;
+        if (srcRatio > tgtRatio) {
+          cropH = sh; cropW = sh * tgtRatio;
+          cropX = (sw - cropW) * px; cropY = 0;
+        } else {
+          cropW = sw; cropH = sw / tgtRatio;
+          cropX = 0; cropY = (sh - cropH) * py;
+        }
+
+        const cv = document.createElement('canvas');
+        cv.width = tW; cv.height = tH;
+        cv.getContext('2d').drawImage(img, cropX, cropY, cropW, cropH, 0, 0, tW, tH);
+        img.src = cv.toDataURL('image/jpeg', 0.92);
         img.style.width = '100%';
         img.style.height = '100%';
-        img.style.objectFit = 'fill'; // sudah di-crop, isi penuh
+        img.style.objectFit = 'fill';
       } catch {}
       res();
     };
@@ -1839,8 +1950,10 @@ function buildPageHTML(chunk, pi, totalPages, d) {
 
     const renderSlot = (p) => {
       if (!p) return `<div style="flex:1;height:${photoH}px;flex-shrink:0;border-radius:4px;background:#f8f9fb;border:1px solid #e0e8f0"></div>`;
+      const posX = p.posX ?? 50;
+      const posY = p.posY ?? 50;
       return `<div style="flex:1;height:${photoH}px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#f0f4fb;border:1px solid #c8d8ee;position:relative;min-width:0">
-        <img src="${p.url}" data-crop="true" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block">
+        <img src="${p.url}" data-crop="true" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:${posX}% ${posY}%;display:block">
       </div>`;
     };
 
