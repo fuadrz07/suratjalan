@@ -962,15 +962,31 @@ async function fbDelete(id) {
 }
 
 // ════════════════════════════════════════════════════
-//  GET ALL DOCS (merge local + firebase)
+//  GET ALL DOCS — localStorage SELALU didahulukan
 // ════════════════════════════════════════════════════
-async function getAllDocs() {
+function getAllDocs() {
+  // Ambil dari localStorage LANGSUNG — tidak perlu async, tidak perlu tunggu Firebase
   const local = getLocal();
+  return local.sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+}
+
+// Sync dari Firebase di background — TIDAK dipanggil saat render
+async function syncFromFirebase() {
   const fb = await fbGetAll();
-  // Local has priority (has photos). Add FB docs not in local.
+  if (!fb.length) return;
+  const local = getLocal();
   const localIds = new Set(local.map(d => d.id));
-  const fbOnly = fb.filter(d => !localIds.has(d.id) && !local.some(l => l.fbId === d.id));
-  return [...local, ...fbOnly].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+  const fbIds    = new Set(local.map(d => d.fbId).filter(Boolean));
+  // Tambahkan data Firebase yang belum ada di lokal
+  const newDocs = fb.filter(d => !localIds.has(d.id) && !fbIds.has(d.id));
+  if (newDocs.length) {
+    const merged = [...local, ...newDocs].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+    setLocal(merged);
+    invalidateCache();
+    // Re-render setelah dapat data Firebase
+    renderDashboard();
+    renderDaftar();
+  }
 }
 
 // ════════════════════════════════════════════════════
@@ -1359,20 +1375,18 @@ async function saveDoc() {
 // ════════════════════════════════════════════════════
 //  DASHBOARD
 // ════════════════════════════════════════════════════
-async function renderDashboard() {
-  const docs = await getAllDocs();
+function renderDashboard() {
+  const docs = getAllDocs(); // sync, langsung
   const now = new Date();
   const thisMonth = now.toISOString().substring(0, 7);
   const filterVal = document.getElementById('filterDash')?.value || thisMonth;
 
-  // Stats
   setEl('st-total', docs.length);
   setEl('st-bulan', docs.filter(d => getYearMonth(d.tanggal) === thisMonth).length);
   setEl('st-bulan-lbl', BULAN[now.getMonth()] + ' ' + now.getFullYear());
   setEl('st-foto', docs.reduce((s, d) => s + (d.schools || []).reduce((ss, sc) => ss + (sc.photos || []).filter(Boolean).length, 0), 0));
   setEl('st-cetak', docs.filter(d => d.printed).length);
 
-  // Table
   const tbody = document.getElementById('dashBody');
   if (!tbody) return;
   const filtered = docs.filter(d => getYearMonth(d.tanggal) === filterVal);
@@ -1402,8 +1416,8 @@ async function renderDashboard() {
 // ════════════════════════════════════════════════════
 //  DAFTAR
 // ════════════════════════════════════════════════════
-async function renderDaftar() {
-  const docs = await getAllDocs();
+function renderDaftar() {
+  const docs = getAllDocs(); // sync
   const filterVal = document.getElementById('filterDaftar')?.value || new Date().toISOString().substring(0, 7);
   const tbody = document.getElementById('daftarBody');
   if (!tbody) return;
@@ -1428,6 +1442,10 @@ async function renderDaftar() {
           <button class="btn btn-outline btn-sm" onclick="openEdit('${d.id}')">✏️</button>
           <button class="btn btn-red btn-sm" onclick="openDelete('${d.id}')">🗑️</button>
         </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
       </td>
     </tr>`;
   }).join('');
@@ -1473,7 +1491,7 @@ async function openEdit(id) {
   _editNewPhotos = {};
   _editDeletedPhotos = {};
 
-  const docs = await getAllDocs();
+  const docs = getAllDocs(); // sync
   const d = docs.find(x => x.id === id);
   if (!d) { toast('Data tidak ditemukan', true); return; }
 
@@ -1705,16 +1723,9 @@ function invalidateCache() { _docsCache = null; }
 
 async function openPrint(id) {
   _printId = id;
-  // Cari dari cache lokal dulu — tidak perlu tunggu Firebase
   const local = getLocal();
   _printDoc = local.find(x => x.id === id) || null;
-  if (!_printDoc) {
-    // Fallback ke getAllDocs jika tidak ada di lokal
-    const docs = await getAllDocs();
-    _printDoc = docs.find(x => x.id === id || x.fbId === id);
-  }
   if (!_printDoc) { toast('Data tidak ditemukan', true); return; }
-
   document.getElementById('printPreview').innerHTML = buildA4Pages(_printDoc);
   openModal('moPrint');
   markPrinted(id);
@@ -2035,29 +2046,26 @@ async function markPrinted(id) {
 //  INIT
 // ════════════════════════════════════════════════════
 function init() {
-  // Set today's date display
   const now = new Date();
-  const dateStr = `${HARI[now.getDay()]}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`;
-  setEl('topDate', dateStr);
+  const tm = now.toISOString().substring(0, 7);
+  setEl('topDate', `${HARI[now.getDay()]}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`);
 
-  // Set month filters to current month
-  const ym = now.toISOString().substring(0, 7);
-  const filterDash   = document.getElementById('filterDash');
-  const filterDaftar = document.getElementById('filterDaftar');
-  if (filterDash)   filterDash.value   = ym;
-  if (filterDaftar) filterDaftar.value = ym;
+  // Set filter ke bulan ini
+  const fd = document.getElementById('filterDash');
+  const ff = document.getElementById('filterDaftar');
+  if (fd) fd.value = tm;
+  if (ff) ff.value = tm;
 
-  // Set default date
   document.getElementById('inTgl').value = todayStr();
 
-  // Build schools UI
   buildSchoolsUI();
-
-  // Auto-clean old data
   autoClean();
 
-  // Render dashboard
+  // Render LANGSUNG dari localStorage — tidak tunggu Firebase
   renderDashboard();
+
+  // Sync Firebase di background (tidak block UI)
+  setTimeout(() => syncFromFirebase(), 1000);
 }
 
 // Start
