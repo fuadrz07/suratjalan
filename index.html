@@ -989,16 +989,7 @@ async function syncFromFirebase() {
   }
 }
 
-// ════════════════════════════════════════════════════
-//  AUTO CLEAN (>7 days)
-// ════════════════════════════════════════════════════
-function autoClean() {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 7);
-  const cut = cutoff.toISOString().substring(0, 10);
-  const fresh = getLocal().filter(d => d.tanggal >= cut);
-  setLocal(fresh);
-}
+// autoClean dihapus — tidak ada penghapusan otomatis
 
 // ════════════════════════════════════════════════════
 //  UI HELPERS
@@ -1346,6 +1337,13 @@ async function saveDoc() {
     local.unshift(docObj);
     setLocal(local);
     invalidateCache();
+
+    // Set filter bulan sesuai tanggal dokumen yang baru disimpan
+    const docMonth = tgl.substring(0, 7);
+    const fdEl = document.getElementById('filterDash');
+    const ffEl = document.getElementById('filterDaftar');
+    if (fdEl) fdEl.value = docMonth;
+    if (ffEl) ffEl.value = docMonth;
 
     // ✅ UI done
     btn.disabled = false;
