@@ -339,22 +339,24 @@ input[type=month] {
 
 /* ── DRAG TO PAN ── */
 .photo-slot.has-photo { cursor: grab; }
-.photo-slot.has-photo:active { cursor: grabbing; }
+.photo-slot.has-photo.dragging { cursor: grabbing; }
 .photo-slot.has-photo img {
   position: absolute; top: 0; left: 0;
   width: 100%; height: 100%;
   object-fit: cover;
   object-position: 50% 50%;
   pointer-events: none;
-  transition: object-position .05s;
+  user-select: none;
 }
+.photo-slot .slot-placeholder { cursor: pointer; }
 .pan-hint {
   position: absolute; bottom: 28px; left: 0; right: 0;
   text-align: center; pointer-events: none;
   font-size: 10px; font-weight: 600;
   color: #fff; opacity: 0;
   transition: opacity .3s;
-  text-shadow: 0 1px 3px rgba(0,0,0,.8);
+  text-shadow: 0 1px 4px rgba(0,0,0,.9);
+  z-index: 2;
 }
 .photo-slot.has-photo:hover .pan-hint { opacity: 1; }
 
@@ -1154,69 +1156,97 @@ function onFileSelect(e, si, sl) {
 }
 
 // ── DRAG TO PAN ──
+// Hanya aktif SETELAH foto diupload (has-photo)
+// Klik pendek = tidak drag = tidak intercept
 function initDragPan(slotEl, imgEl, si, sl) {
+  // Hapus listener lama jika ada (re-upload)
+  if (slotEl._dragCleanup) slotEl._dragCleanup();
+
   let isDragging = false;
+  let hasMoved = false;
   let startX, startY, startPosX, startPosY;
 
-  // Mouse events
-  slotEl.addEventListener('mousedown', onStart);
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', onEnd);
-
-  // Touch events
-  slotEl.addEventListener('touchstart', onStart, { passive: true });
-  window.addEventListener('touchmove', onMove, { passive: false });
-  window.addEventListener('touchend', onEnd);
-
   function getXY(e) {
-    return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
-                     : { x: e.clientX, y: e.clientY };
+    return e.touches
+      ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      : { x: e.clientX, y: e.clientY };
   }
 
   function onStart(e) {
-    // Jangan drag jika klik tombol hapus atau placeholder
-    if (e.target.closest('.slot-remove') || e.target.closest('.slot-placeholder')) return;
+    // Abaikan jika klik tombol hapus
+    if (e.target.closest('.slot-remove')) return;
+    // Abaikan jika belum ada foto
     if (!slotEl.classList.contains('has-photo')) return;
-    isDragging = true;
     const pos = getXY(e);
     startX = pos.x; startY = pos.y;
-    const pd = photoData[si][sl];
-    startPosX = pd ? pd.posX : 50;
-    startPosY = pd ? pd.posY : 50;
-    e.preventDefault && e.preventDefault();
+    hasMoved = false;
+    const pd = photoData[si] && photoData[si][sl];
+    startPosX = pd ? (pd.posX ?? 50) : 50;
+    startPosY = pd ? (pd.posY ?? 50) : 50;
+    isDragging = true;
   }
 
   function onMove(e) {
     if (!isDragging) return;
-    e.preventDefault && e.preventDefault();
     const pos = getXY(e);
+    const dx = Math.abs(pos.x - startX);
+    const dy = Math.abs(pos.y - startY);
+    // Mulai geser setelah minimal 4px movement
+    if (!hasMoved && dx < 4 && dy < 4) return;
+    hasMoved = true;
+    if (e.cancelable) e.preventDefault();
     const rect = slotEl.getBoundingClientRect();
-    // Sensitivitas: 1px drag = bergerak sebanding lebar/tinggi slot
-    const dx = (pos.x - startX) / rect.width  * -100;
-    const dy = (pos.y - startY) / rect.height * -100;
-    const newX = Math.min(100, Math.max(0, startPosX + dx));
-    const newY = Math.min(100, Math.max(0, startPosY + dy));
+    const moveX = (pos.x - startX) / rect.width  * -80;
+    const moveY = (pos.y - startY) / rect.height * -80;
+    const newX = Math.min(100, Math.max(0, startPosX + moveX));
+    const newY = Math.min(100, Math.max(0, startPosY + moveY));
     imgEl.style.objectPosition = `${newX}% ${newY}%`;
-    if (photoData[si][sl]) {
+    if (photoData[si] && photoData[si][sl]) {
       photoData[si][sl].posX = newX;
       photoData[si][sl].posY = newY;
     }
   }
 
-  function onEnd() {
+  function onEnd(e) {
     if (!isDragging) return;
     isDragging = false;
+    // Jika tidak ada gerakan = klik biasa, jangan intercept
   }
+
+  // Attach ke slot saja (bukan window) agar tidak bocor
+  slotEl.addEventListener('mousedown', onStart);
+  slotEl.addEventListener('mousemove', onMove);
+  slotEl.addEventListener('mouseup', onEnd);
+  slotEl.addEventListener('mouseleave', onEnd);
+  slotEl.addEventListener('touchstart', onStart, { passive: true });
+  slotEl.addEventListener('touchmove', onMove, { passive: false });
+  slotEl.addEventListener('touchend', onEnd, { passive: true });
+
+  // Simpan cleanup function
+  slotEl._dragCleanup = () => {
+    slotEl.removeEventListener('mousedown', onStart);
+    slotEl.removeEventListener('mousemove', onMove);
+    slotEl.removeEventListener('mouseup', onEnd);
+    slotEl.removeEventListener('mouseleave', onEnd);
+    slotEl.removeEventListener('touchstart', onStart);
+    slotEl.removeEventListener('touchmove', onMove);
+    slotEl.removeEventListener('touchend', onEnd);
+  };
 }
 
 function removePhoto(e, si, sl) {
   e.stopPropagation();
   if (photoData[si][sl]?.objUrl) URL.revokeObjectURL(photoData[si][sl].objUrl);
   photoData[si][sl] = null;
-  document.getElementById(`slot-${si}-${sl}`).classList.remove('has-photo');
+  const slotEl = document.getElementById(`slot-${si}-${sl}`);
+  if (slotEl) {
+    if (slotEl._dragCleanup) { slotEl._dragCleanup(); slotEl._dragCleanup = null; }
+    slotEl.classList.remove('has-photo');
+  }
   const imgEl = document.getElementById(`img-${si}-${sl}`);
-  imgEl.src = ''; imgEl.style.display = 'none';
-  document.getElementById(`file-${si}-${sl}`).value = '';
+  if (imgEl) { imgEl.src = ''; imgEl.style.display = 'none'; }
+  const fileEl = document.getElementById(`file-${si}-${sl}`);
+  if (fileEl) fileEl.value = '';
   updateCount(si);
 }
 
