@@ -1602,50 +1602,125 @@ async function openPrint(id){
   markPrinted(id);
 }
 
-function doPrint(){
+// Tunggu semua <img> di dalam elemen benar-benar loaded
+function waitImagesLoaded(rootEl){
+  const imgs=Array.from(rootEl.querySelectorAll('img'));
+  if(!imgs.length) return Promise.resolve();
+  return Promise.all(imgs.map(img=>{
+    if(img.complete && img.naturalWidth>0) return Promise.resolve();
+    return new Promise(res=>{
+      img.onload =()=>res();
+      img.onerror=()=>res(); // tetap lanjut walau 1 gambar error
+    });
+  }));
+}
+
+async function doPrint(){
   if(!_printDoc) return;
   const d=_printDoc;
   const sWP=(d.schools||[]).filter(s=>(s.photos||[]).some(p=>p&&p.url));
-  const PER_PAGE=5;const pc=[];
+  const PER_PAGE=5; const pc=[];
   for(let i=0;i<sWP.length;i+=PER_PAGE) pc.push(sWP.slice(i,i+PER_PAGE));
   if(!pc.length) pc.push([]);
-  const pagesHtml=pc.map((chunk,pi)=>`<div style="width:100%;background:#fff;padding:0;margin:0;page-break-after:always;break-after:page">${buildPageHTML(chunk,pi,pc.length,d)}</div>`).join('');
-  const win=window.open('','_blank','width=900,height=700');
-  if(!win){toast('Izinkan popup browser!','error');return;}
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Print SPPG ${d.tanggal}</title>
-    <style>*{box-sizing:border-box;margin:0;padding:0}html,body{background:#fff;font-family:'Segoe UI',system-ui,sans-serif}@page{size:210mm 297mm;margin:10mm 12mm}img{display:block}</style>
+
+  const pagesHtml=pc.map((chunk,pi)=>
+    `<div style="width:100%;background:#fff;padding:28px 36px;margin:0;box-sizing:border-box;page-break-after:always;break-after:page;font-family:system-ui,sans-serif">${buildPageHTML(chunk,pi,pc.length,d)}</div>`
+  ).join('');
+
+  // ── Render dulu di hidden iframe dalam halaman yang sama ──
+  // Ini menghindari masalah popup + data:URL besar di browser modern
+  let iframe=document.getElementById('_printFrame');
+  if(!iframe){
+    iframe=document.createElement('iframe');
+    iframe.id='_printFrame';
+    iframe.style.cssText='position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:none;z-index:-1;background:#fff';
+    document.body.appendChild(iframe);
+  }
+
+  const iDoc=iframe.contentDocument||iframe.contentWindow.document;
+  iDoc.open();
+  iDoc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      html,body{background:#fff;font-family:'Segoe UI',system-ui,sans-serif;width:794px}
+      @page{size:210mm 297mm;margin:10mm 12mm}
+      img{display:block;max-width:100%}
+    </style>
   </head><body>${pagesHtml}</body></html>`);
-  win.document.close();win.onload=()=>{win.focus();win.print();};
+  iDoc.close();
+
+  // Tunggu semua gambar loaded di dalam iframe
+  await waitImagesLoaded(iDoc.body);
+  // Beri sedikit waktu render layout
+  await new Promise(r=>setTimeout(r,300));
+
+  // Print iframe
+  iframe.contentWindow.focus();
+  iframe.contentWindow.print();
 }
 
 async function doPDF(){
   if(!_printDoc) return;
-  toast('Membuat PDF...');
+  showLoader('Menyiapkan PDF...');
   try{
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
     const pages=buildA4PagesArray(_printDoc);
-    const container=document.createElement('div');
-    container.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
-    document.body.appendChild(container);
+
+    // Container di dalam dokumen utama — bukan popup, tidak ada CORS issue
+    let container=document.getElementById('_pdfContainer');
+    if(!container){
+      container=document.createElement('div');
+      container.id='_pdfContainer';
+      container.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-99;font-family:system-ui,sans-serif';
+      document.body.appendChild(container);
+    }
+
     for(let i=0;i<pages.length;i++){
-      container.innerHTML=`<div style="width:794px;height:1123px;padding:28px 36px;background:#fff;font-family:system-ui,sans-serif;overflow:hidden">${pages[i]}</div>`;
-      const imgs=container.querySelectorAll('img');
-      await Promise.all(Array.from(imgs).map(img=>(img.complete&&img.naturalWidth>0)?Promise.resolve():new Promise(r=>{img.onload=r;img.onerror=r;})));
-      const canvas=await html2canvas(container.firstChild,{scale:2,useCORS:true,backgroundColor:'#fff',width:794,windowWidth:794});
+      // Set HTML halaman
+      container.innerHTML=`<div id="_pdfPage" style="width:794px;min-height:1123px;padding:28px 36px;background:#fff;font-family:system-ui,sans-serif;overflow:hidden">${pages[i]}</div>`;
+
+      // Tunggu semua gambar benar-benar loaded
+      await waitImagesLoaded(container);
+      // Beri browser waktu render (layout + gambar decode)
+      await new Promise(r=>setTimeout(r,200));
+      await new Promise(r=>requestAnimationFrame(r));
+      await new Promise(r=>requestAnimationFrame(r));
+
+      const pageEl=container.querySelector('#_pdfPage');
+      const canvas=await html2canvas(pageEl,{
+        scale:2,
+        useCORS:true,
+        allowTaint:true,
+        backgroundColor:'#ffffff',
+        width:794,
+        windowWidth:794,
+        logging:false,
+        imageTimeout:0,        // ✅ tidak ada timeout gambar
+        removeContainer:false
+      });
+
       const imgData=canvas.toDataURL('image/jpeg',0.92);
       if(i>0) pdf.addPage();
       pdf.addImage(imgData,'JPEG',0,0,210,297);
+
+      // Bersihkan canvas dari memori
+      canvas.width=0; canvas.height=0;
     }
-    document.body.removeChild(container);
+
+    // Bersihkan container
+    container.innerHTML='';
+    hideLoader();
     pdf.save(`SPPG_Mulia2_${_printDoc.tanggal}.pdf`);
     toast('✅ PDF berhasil diunduh!','success');
+
   }catch(e){
+    hideLoader();
     console.error('PDF error:',e);
-    toast('Membuka dialog print — pilih Save as PDF');
-    doPrint();
+    toast('❌ Gagal buat PDF: '+e.message,'error');
   }
 }
 
